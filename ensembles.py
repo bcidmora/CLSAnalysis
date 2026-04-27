@@ -1,0 +1,537 @@
+import numpy as np
+import h5py
+import os
+
+location = os.path.expanduser("~")+"${YOUR_DIRECTORY}" # Path to your main folder
+outputLocation = f"{location}/CorrelatorData/"
+
+# f: Correlation function with operator basis > 1
+# f1 : Correlation function with operator basis = 1
+# single/multiTM...Fits : what should be used for the fit. Ranges need to be given relative to the first time slice of the correlators. Code takes this shift into account.
+# single/multiTM...Results : what should be used for the p-values, correlated differences etc
+
+fmToMev = np.float64(197.327)
+
+iso_map = {
+    's': ('Singlets', 'isosinglet', '0'),
+    'd': ('Doublets', 'isodoublet', r'$\frac{1}{2}$'),
+    't': ('Triplets', 'isotriplet', '1'),
+    'q': ('Quartets', 'isoquartet', r'$\frac{3}{2}$'),
+     }
+
+ens_a654 = {
+    'aLat' : np.float64(0.097), # in fm
+    'betaLat' : np.float64(3.34),
+    'LatSize' : np.float64(24.),
+    'ncfgs' : 5068,
+    'allConfigs': False,
+    'nfgsList': np.arange(8,394,8),
+    'weight_raw' : [f"{location}/data/A654/A654r000.ms1.dat_ascii"],
+    'fs' : f'{location}/data/A654/cls21_A654_r000_singles.hdf5',
+    'singleTMaxFits' : [15, 15, 15],
+    'singleTMinResults' :  [30, 30, 30],
+    's' : { 'iso_name' : iso_map['s'][0],
+            'iso_tag' : iso_map['s'][1],
+            'iso_label' : iso_map['s'][2],
+            'fm' : f'{location}/data/A654/cls21_A654_r000_{iso_map['s'][1]}_Sm3_multiples_fwd.hdf5',
+            'multiTMaxFits' : [[]],
+            'multiTMinResults' : [[]],
+            'nonInteractingLevels' : [ []],
+            'operatorRemovalChoice': [[]],
+            },
+    'd' : { 'iso_name' : iso_map['d'][0],
+            'iso_tag' : iso_map['d'][1],
+            'iso_label' : iso_map['d'][2],
+            'fm' : f'{location}/data/A654/cls21_A654_r000_{iso_map['d'][1]}_Sm3_multiples_fwd.hdf5',
+            'multiTMaxFits' : [[]],
+            'multiTMinResults' : [[]],
+            'nonInteractingLevels' : [ []],
+            'operatorRemovalChoice': [[]],
+            },
+    't' : { 'iso_name' : iso_map['t'][0],
+            'iso_tag' : iso_map['t'][1],
+            'iso_label' : iso_map['t'][2],
+            'fm' : f'{location}/data/A654/cls21_A654_r000_{iso_map['t'][1]}_Sm3_multiples_fwd.hdf5',
+            'multiTMaxFits' : [[]],
+            'multiTMinResults' : [[]],
+            'nonInteractingLevels' : [ []],
+            'operatorRemovalChoice': [[]],
+            },
+    'q' : { 'iso_name' : iso_map['q'][0],
+            'iso_tag' : iso_map['q'][1],
+            'iso_label' : iso_map['q'][2],
+            'fm' : f'{location}/data/A654/cls21_A654_r000_{iso_map['q'][1]}_Sm3_multiples_fwd.hdf5',
+            'multiTMaxFits' : [[]],
+            'multiTMinResults' : [[]],
+            'nonInteractingLevels' : [ []],
+            'operatorRemovalChoice': [[]],
+            },
+    }
+
+ens_d200 = {
+    'aLat' : np.float64(0.0633), # in fm
+    'betaLat' : np.float64(3.55),
+    'LatSize' : np.float64(64.),
+    'ncfgs' : 2001,
+    'allConfigs': False,
+    'nfgsList': np.arange(0,2000,1),
+    'weight_raw' : [f'{location}/data/D200/D200r000_rw.dat'],
+    'fs' : f'{location}/data/D200/cls21_D200_r000_single_fwd.hdf5',
+    'singleTMaxFits' : [25,25,25,25,25,25,25,25,25,25, 25,25,25,25,25,25,25,25,25,25, 25,25,25,25,25,25,25,25,25],
+    'singleTMinResults' : [12,11,10,10,10,12, #P^{2} = 0
+                            8,10,10,10,10,10, # P^{2} = 1
+                            8,10,8,8,10,8, # P^{2} = 2
+                            8,10,10,8,10,8, # P^{2} = 3
+                            8,8,8,8,10], # P^{2} = 4,
+    's' : { 'iso_name' : iso_map['s'][0],
+            'iso_tag' : iso_map['s'][1],
+            'iso_label' : iso_map['s'][2],
+            'fm' : f'{location}/data/D200/cls21_D200_r000_{iso_map["s"][1]}_Sm1_fwd.hdf5',
+            'multiTMaxFits' : [[25,24,23,19,16],
+                                [24,24,24,24,23,22,21,16],
+                                [25,23,23],
+                                [25,25,24,24,24,24,22,22,22],
+                                [24,24,22,22,22,20,19],
+                                [25,25,25,24,23,24,24,23,23,23,23,21,21,20,18],
+                                [24,24,22,23,21,19],
+                                [24,23,23,22,23,19],
+                                [25,22,20,20,22,21,23,21,22,21,21,19,18]],
+            'multiTMinResults' : [[14, 13, 13, 11, 8],  #PSQ0 G1g
+                                [16, 16, 16, 15, 13, 13, 11, 10], #PSQ0 G1u
+                                [14, 14, 14], #PSQ0 Hu
+                                [15, 15, 14, 14, 14, 13, 12, 12, 13], #PSQ1 G1
+                                [14, 15, 14, 14, 12, 12, 10], #PSQ1 G2
+                                [13, 14, 13, 13, 14, 14, 13, 13, 11, 12, 11, 8, 8, 9, 8], #PSQ2 G
+                                [13, 13, 12, 12, 12, 12], #PSQ3 F1
+                                [13, 13, 12, 13, 13, 10], #PSQ3 F2
+                                [14, 13, 13, 12, 13, 12, 12, 13, 12, 13, 9, 9, 9]],
+            'nonInteractingLevels' : [ ['K(1)N(1)', 'P(1)S(1)'], # P0_G1g
+                                ['K(0)N(0)', 'P(0)S(0)' , 'K(1)N(1)', 'P(1)S(1)'], # P0_G1u
+                                ['P(0)S(0)', 'P(1)S(1)', 'K(1)N(1)'], # P0_Hu
+                                ['K(0)N(1)', 'P(0)S(1)', 'K(1)N(0)', 'P(1)S(0)'], # P1_G1
+                                ['P(0)S(1)', 'P(1)S(2)', 'K(1)N(2)'], # P1_G2
+                                ['K(0)N(2)', 'P(0)S(2)', 'K(1)N(1)', 'P(1)S(1)', 'K(2)N(0)'], # P2_G
+                                ['P(1)S(2)', 'K(1)N(2)', 'P(2)S(1)','K(2)N(1)', 'P(0)S(3)'], # P3_F1
+                                ['P(1)S(2)', 'K(1)N(2)', 'P(2)S(1)','K(2)N(1)', 'P(0)S(3)'], # P3_F2
+                                ['K(0)N(3)', 'P(0)S(3)', 'K(1)N(2)', 'P(1)S(2)',  'K(2)N(1)', 'K(3)N(0)']], # P3_G
+            'operatorRemovalChoice' : [[]],
+            },
+    'd' : { 'iso_name' : iso_map['d'][0],
+            'iso_tag' : iso_map['d'][1],
+            'iso_label' : iso_map['d'][2],
+            'fm' : f'{location}/data/D200/cls21_d200_r000_{iso_map["d"][1]}_S1_multiple.h5',
+            'multiTMaxFits' : [[[40,30,19]], 
+                               [[35,35,24,17]], 
+                               [[40,40,38,29,36,22,22]], 
+                               [[40,40,34,21]], 
+                               [[40,40,38,28,35,22,20]], 
+                               [[36,36,28,21]], 
+                               [[37,32,30,28,20]], 
+                               [[36,32,33,34,32,21,17]], 
+                               [[36,33,30,30,20]], 
+                               [[38,38,28,29,30,21,17]], 
+                               [[29,31,19]]],
+            'multiTMinResults' : [[[23,23,15]], [[23,23,17,14]], [[23,23,23,23,23,17,17]], [[23,23,23,17]], [[23,23,23,23,23,17,15]], [[23,23,23,18]], [[23,23,23,23,15]], [[23,23,23,23,23,16,13]], [[23,23,23,23,17]], [[23,23,23,21,23,17,13]], [[23,23,15]]],
+            'nonInteractingLevels': [['K(0)P(0)', 'K(1)P(1)'],  # PSQ0_A1G
+                            ['K(1)P(1)', 'K(2)P(2)'],  # PSQ0_T1u
+                            ['K(0)P(1)', 'K(1)P(0)', 'K(2)P(1)', 'K(1)P(2)'],  # PSQ1_A1
+                            ['K(2)P(1)', 'K(1)P(2)'],  # PSQ1_E
+                            ['K(2)P(0)', 'K(1)P(1)', 'K(0)P(2)', 'K(3)P(1)'],  # PSQ2_A1
+                            ['K(3)P(1)'],  # PSQ2_B1
+                            ['K(1)P(1)', 'K(2)P(2)'], # PSQ2_B2
+                            ['K(3)P(0)', 'K(2)P(1)', 'K(1)P(2)', 'K(0)P(3)'],  # PSQ3_A1
+                            ['K(2)P(1)', 'K(1)P(2)'],  # PSQ3_E
+                            ['K(1)P(1)', 'K(4)P(0)', 'K(2)P(2)', 'K(0)P(4)'], # PSQ4_A1
+                            ['K(2)P(2)']], # PSQ4_E
+            'operatorRemovalChoice' : [['PSQ0_T1u', '0011', '0001', '0010']],
+            },
+    't' : { 'iso_name' : iso_map['t'][0],
+            'iso_tag' : iso_map['t'][1],
+            'iso_label' : iso_map['t'][2],
+            'fm' : f'{location}/data/D200/cls21_d200_r000_{iso_map['t'][1]}_S1_multiple.h5',
+            'multiTMaxFits' : [[]],
+            'multiTMinResults': [[]],
+            'nonInteractingLevels': [['K(1)N(1)', 'P(1)S(1)'],  # P0_G1g
+                            ['K(0)N(0)', 'P(0)S(0)', 'K(1)N(1)', 'P(1)S(1)'],  # P0_G1u
+                            ['P(0)S(0)', 'P(1)S(1)', 'K(1)N(1)'],  # P0_Hu
+                            ['K(0)N(1)', 'P(0)S(1)', 'K(1)N(0)', 'P(1)S(0)'],  # P1_G1
+                            ['P(0)S(1)', 'P(1)S(2)', 'K(1)N(2)'],  # P1_G2
+                            ['K(0)N(2)', 'P(0)S(2)', 'K(1)N(1)', 'P(1)S(1)', 'K(2)N(0)'],  # P2_G
+                            ['P(1)S(2)', 'K(1)N(2)', 'P(2)S(1)', 'K(2)N(1)', 'P(0)S(3)'],  # P3_F1
+                            ['P(1)S(2)', 'K(1)N(2)', 'P(2)S(1)', 'K(2)N(1)', 'P(0)S(3)'],  # P3_F2
+                            ['K(0)N(3)', 'P(0)S(3)', 'K(1)N(2)', 'P(1)S(2)', 'K(2)N(1)', 'K(3)N(0)']], # P3_G
+            'operatorRemovalChoice' : [['PSQ0_T1u', '0011', '0001', '0010']],
+            },
+    'q' : { 'iso_name' : iso_map['q'][0],
+            'iso_tag' : iso_map['q'][1],
+            'iso_label' : iso_map['q'][2],
+            'fm' : f'{location}/data/D200/cls21_d200_r000_{iso_map['q'][1]}_S1_multiple.h5',
+            'multiTMinResults': [[]],
+            'nonInteractingLevels': [['K(1)N(1)', 'P(1)S(1)'],  # P0_G1g
+                            ['K(0)N(0)', 'P(0)S(0)', 'K(1)N(1)', 'P(1)S(1)'],  # P0_G1u
+                            ['P(0)S(0)', 'P(1)S(1)', 'K(1)N(1)'],  # P0_Hu
+                            ['K(0)N(1)', 'P(0)S(1)', 'K(1)N(0)', 'P(1)S(0)'],  # P1_G1
+                            ['P(0)S(1)', 'P(1)S(2)', 'K(1)N(2)'],  # P1_G2
+                            ['K(0)N(2)', 'P(0)S(2)', 'K(1)N(1)', 'P(1)S(1)', 'K(2)N(0)'],  # P2_G
+                            ['P(1)S(2)', 'K(1)N(2)', 'P(2)S(1)', 'K(2)N(1)', 'P(0)S(3)'],  # P3_F1
+                            ['P(1)S(2)', 'K(1)N(2)', 'P(2)S(1)', 'K(2)N(1)', 'P(0)S(3)'],  # P3_F2
+                            ['K(0)N(3)', 'P(0)S(3)', 'K(1)N(2)', 'P(1)S(2)', 'K(2)N(1)', 'K(3)N(0)']], # P3_G
+            'operatorRemovalChoice' : [[]],
+                    },
+    'threshold_masses' : {'E': 0.1768, 'K': 0.15630, 'P': 0.06502},
+    'singleTMinResultsCorrDiff' : {'K' : [23, 23, 23, 23, 23],
+                            'P' : [23, 23, 23, 23, 23]},
+    'twoBody' : [('E', 'K')],
+    'threeBody' : [('K', 'P', 'P')],
+    'singleMesons': {
+                'P': f'{outputLocation}/D200/Fits_SingleHadrons/Single_correlators_jk_bin10_fits_vtest.h5',
+                'K': f'{outputLocation}/D200/Fits_SingleHadrons/Single_correlators_jk_bin10_fits_vtest.h5'},
+    }
+    
+ens_n200 = {
+    'aLat' : np.float64(0.06426), # in fm
+    'betaLat' : np.float64(3.55),
+    'LatSize' : np.float64(48.),
+    'ncfgs' : 1712,
+    'allConfigs': True,
+    'nfgsList': np.arange(0,1712,1),
+    'weight_raw' : [f'{location}/data/N200/N200r000.ms1.dat_ascii', f'{location}/data/N200/N200r001.ms1.dat_ascii'],
+    'fs' : f'{location}/data/N200/cls21_N200_r000_singles.hdf5',
+    'singleTMaxFits' : [30, 30, 30],
+    'singleTMinResults' : [15, 15, 15],
+    's' : { 'iso_name' : iso_map['s'][0],
+            'iso_tag' : iso_map['s'][1],
+            'iso_label' : iso_map['s'][2],
+            'fm' : f'{location}/data/N200/cls21_N200_r000_{iso_map['s'][1]}_S1_multiple.hdf5',
+            'multiTMaxFits' : [[]],
+            'multiTMinResults' : [[]],
+            'nonInteractingLevels' : [ []],
+            'operatorRemovalChoice' : [[]],
+            },
+    'd' : { 'iso_name' : iso_map['d'][0],
+            'iso_tag' : iso_map['d'][1],
+            'iso_label' : iso_map['d'][2],
+            'fm' : f'{location}/data/N200/cls21_N200_r000_{iso_map['d'][1]}_S1_multiple.h5',
+            'multiTMaxFits' : [[]],
+            'multiTMinResults' : [[]],
+            'nonInteractingLevels': [[]], 
+            'operatorRemovalChoice' : [[]],
+            },
+    't' : { 'iso_name' : iso_map['t'][0],
+            'iso_tag' : iso_map['t'][1],
+            'iso_label' : iso_map['t'][2],
+            'fm' : f'{location}/data/N200/cls21_N200_r000_{iso_map['t'][1]}_S1_multiple.h5',
+            'multiTMaxFits': [[]],
+            'multiTMinResults': [[]],
+            'nonInteractingLevels': [[]], 
+            'operatorRemovalChoice' : [[]],
+        },
+    'q' : { 'iso_name' : iso_map['q'][0],
+            'iso_tag' : iso_map['q'][1],
+            'iso_label' : iso_map['q'][2],
+            'fm' : f'{location}/data/N200/cls21_N200_r000_{iso_map['q'][1]}_S1_multiple.h5',
+            'multiTMaxFits': [[]],
+            'multiTMinResults': [[]],
+            'nonInteractingLevels': [[]], 
+            'operatorRemovalChoice' : [[]],
+        },
+    }
+    
+ens_n201 = {
+    'aLat' : np.float64(0.0749), # in fm
+    'betaLat' : np.float64(3.55),
+    'LatSize' : np.float64(48.),
+    'ncfgs' : 1522,
+    'allConfigs': True,
+    'nfgsList': np.arange(0,1522,1),
+    'weight_raw' : [f'{location}/data/N201/N201r001.ms1.dat_ascii'],
+    'fs' : f'{location}/data/N201/cls21_N201_r000_isotriplet_S0_singles_fwd.hdf5',
+    'singleTMaxFits' : [],
+    'singleTMinResults' : [],
+    's' : { 'iso_name' : iso_map['s'][0],
+            'iso_tag' : iso_map['s'][1],
+            'iso_label' : iso_map['s'][2],
+            'fm' : f'{location}/data/N201/cls21_N201_r000_{iso_map['s'][1]}_S1_multiple.hdf5',
+            'multiTMaxFits' : [[]],
+            'multiTMinResults' : [[]],
+            'nonInteractingLevels' : [ []],
+            'operatorRemovalChoice' : [[]],
+            },
+    'd' : { 'iso_name' : iso_map['d'][0],
+            'iso_tag' : iso_map['d'][1],
+            'iso_label' : iso_map['d'][2],
+            'fm' : f'{location}/data/N201/cls21_N201_r000_{iso_map['d'][1]}_S1_multiple.h5',
+            'multiTMaxFits' : [[]],
+            'multiTMinResults' : [[]],
+            'nonInteractingLevels': [[]], 
+            'operatorRemovalChoice' : [[]],
+            },
+    't' : { 'iso_name' : iso_map['t'][0],
+            'iso_tag' : iso_map['t'][1],
+            'iso_label' : iso_map['t'][2],
+            'fm' : f'{location}/data/N201/cls21_N201_r000_{iso_map['t'][1]}_S0_multiple_fwd.hdf5',
+            'multiTMaxFits': [[]],
+            'multiTMinResults': [[]],
+            'nonInteractingLevels': [[]], 
+            'operatorRemovalChoice' : [[]],
+        },
+    'q' : { 'iso_name' : iso_map['q'][0],
+            'iso_tag' : iso_map['q'][1],
+            'iso_label' : iso_map['q'][2],
+            'fm' : f'{location}/data/N201/cls21_N201_r000_{iso_map['q'][1]}_S1_multiple.h5',
+            'multiTMaxFits': [[]],
+            'multiTMinResults': [[]],
+            'nonInteractingLevels': [[]], 
+            'operatorRemovalChoice' : [[]],
+        },
+    }
+
+ens_n203 = {
+    'aLat' : np.float64(0.06426), # in fm
+    'betaLat' : np.float64(3.55),
+    'LatSize' : np.float64(48.),
+    'ncfgs' : 756,
+    'allConfigs': True,
+    'nfgsList': np.arange(0,756,1),
+    'weight_raw' : [f'{location}/data/N203/N203r000.ms1.txt'],
+    'fs' : f'{location}/data/N203/cls21_N203_r000_singles.hdf5',
+    'singleTMaxFits' : [],
+    'singleTMinResults' : [],
+    's' : { 'iso_name' : iso_map['s'][0],
+            'iso_tag' : iso_map['s'][1],
+            'iso_label' : iso_map['s'][2],
+            'fm' : f'{location}/data/N203/cls21_N203_r000_{iso_map['s'][1]}_S1_multiple.hdf5',
+            'multiTMaxFits' : [[]],
+            'multiTMinResults' : [[]],
+            'nonInteractingLevels' : [ []],
+            'operatorRemovalChoice' : [[]]
+            },
+    'd' : { 'iso_name' : iso_map['d'][0],
+            'iso_tag' : iso_map['d'][1],
+            'iso_label' : iso_map['d'][2],
+            'fm' : f'{location}/data/N203/cls21_N203_r000_{iso_map['d'][1]}_S1_multiple.h5',
+            'multiTMaxFits' : [[]],
+            'multiTMinResults' : [[]],
+            'nonInteractingLevels': [[]], 
+            'operatorRemovalChoice' : [[]]
+            },
+    't' : { 'iso_name' : iso_map['t'][0],
+            'iso_tag' : iso_map['t'][1],
+            'iso_label' : iso_map['t'][2],
+            'fm' : f'{location}/data/N203/cls21_N203_r000_{iso_map['t'][1]}_S1_multiple.h5',
+            'multiTMaxFits': [[]],
+            'multiTMinResults': [[]],
+            'nonInteractingLevels': [[]], 
+            'operatorRemovalChoice' : [[]]
+        },
+    'q' : { 'iso_name' : iso_map['q'][0],
+            'iso_tag' : iso_map['q'][1],
+            'iso_label' : iso_map['q'][2],
+            'fm' : f'{location}/data/N203/cls21_N203_r000_{iso_map['q'][1]}_S1_multiple.h5',
+            'multiTMaxFits': [[]],
+            'multiTMinResults': [[]],
+            'nonInteractingLevels': [[]], 
+            'operatorRemovalChoice' : [[]]
+        },
+    }
+    
+ens_e250 = {
+    'aLat' : np.float64(0.06500), # in fm
+    'betaLat' : np.float64(3.55),
+    'LatSize' : np.float64(96.),
+    'ncfgs' : 353,
+    'allConfigs': True,
+    'nfgsList': np.arange(0,353,1),
+    'weight_raw' : [f'{location}/data/E250/correct_reweights_e250.txt'],
+    'fs' : f'{location}/data/E250/cls21_e250_r001_S1_singles.h5',
+    'singleTMaxFits': [37,37,37,37,37,37,28,31,28],
+    'singleTMinResults': [17,25,25,24,18,18,18,17,19],
+    's' : { 'iso_name' : iso_map['s'][0],
+            'iso_tag' : iso_map['s'][1],
+            'iso_label' : iso_map['s'][2],
+            'fm' : f'{location}/data/E250/cls21_e250_r000_{iso_map['s'][1]}_S1_multiple.h5',
+            'multiTMaxFits' : [[]],
+            'multiTMinResults' : [[]],
+            'nonInteractingLevels' : [ []],
+            'operatorRemovalChoice': [[]]
+            },
+    'd' : { 'iso_name' : iso_map['d'][0],
+            'iso_tag' : iso_map['d'][1],
+            'iso_label' : iso_map['d'][2],
+            'fm' : f'{location}/data/E250/cls21_e250_r001_{iso_map['d'][1]}_S1_multiple.h5',
+            'multiTMaxFits' : [[]],
+            'multiTMinResults' : [[]],
+            'nonInteractingLevels': [[]], 
+            'operatorRemovalChoice': [[]]
+                    },
+    't' : { 'iso_name' : iso_map['t'][0],
+            'iso_tag' : iso_map['t'][1],
+            'iso_label' : iso_map['t'][0],
+            'fm' : f'{location}/data/E250/cls21_e250_r001_{iso_map['t'][1]}_S1_multiple.h5',
+            'multiTMaxFits': [[]],
+            'multiTMinResults': [[]],
+            'nonInteractingLevels': [[]], 
+            'operatorRemovalChoice' : [[]]
+            },
+    'q' : { 'iso_name' : iso_map['q'][0],
+            'iso_tag' : iso_map['q'][1],
+            'iso_label' : iso_map['q'][2],
+            'fm' : f'{location}/data/E250/cls21_d200_r000_isodoublet_S1_multiple.h5',
+            'multiTMaxFits': [[]],
+            'multiTMinResults': [[]],
+            'nonInteractingLevels': [[]], 
+            'operatorRemovalChoice': [[]]
+            },
+    }
+
+ens_n451 = {
+    'aLat' : np.float64(0.0749), # in fm
+    'betaLat' : np.float64(3.46),
+    'LatSize' : np.float64(48.),
+    'ncfgs' : 1011,
+    'allConfigs': True,
+    'nfgsList': np.arange(0,1011,1),
+    'weight_raw' : [f'{location}/data/N451/N451r000.ms1.dat_ascii'],
+    'fs' : f'{location}/data/N451/cls21_N451_r000_isotriplet_S0_singles_fwd.hdf5',
+    'singleTMaxFits' : [],
+    'singleTMinResults' : [],
+    's' : { 'iso_name' : iso_map['s'][0],
+            'iso_tag' : iso_map['s'][1],
+            'iso_label' : iso_map['s'][2],
+            'fm' : f'{location}/data/N451/cls21_N451_r000_{iso_map['s'][1]}_Sm1_fwd.hdf5',
+            'multiTMaxFits' : [[]],
+            'multiTMinResults' : [[]],
+            'nonInteractingLevels' : [ []],
+            'operatorRemovalChoice': [[]],
+            },
+    'd' : { 'iso_name' : iso_map['d'][0],
+            'iso_tag' : iso_map['d'][1],
+            'iso_label' : iso_map['d'][2],
+            'fm' : f'{location}/data/N451/cls21_N451_r000_{iso_map['d'][1]}_Sm1_fwd.hdf5',
+            'multiTMaxFits' : [[]],
+            'multiTMinResults' : [[]],
+            'nonInteractingLevels': [ []],
+            'operatorRemovalChoice': [[]],
+            },
+    't' : { 'iso_name' : iso_map['t'][0],
+            'iso_tag' : iso_map['t'][1],
+            'iso_label' : iso_map['t'][2],
+            'fm' : f'{location}/data/N451/cls21_N451_r000_{iso_map['t'][1]}_S0_multiple_fwd.hdf5',
+            'multiTMaxFits' : [[]],
+            'multiTMinResults' : [[]],
+            'nonInteractingLevels' : [ []],
+            'operatorRemovalChoice': [[]],
+            },
+    'q' : { 'iso_name' : iso_map['q'][0],
+            'iso_tag' : iso_map['q'][1],
+            'iso_label' : iso_map['q'][2],
+            'fm' : f'{location}/data/X451/cls21_X451_r001_{iso_map['q'][1]}_Sm1_fwd.hdf5',
+            'multiTMaxFits': [[]],
+            'multiTMinResults': [[]],
+            'nonInteractingLevels': [[]],
+            'operatorRemovalChoice': [[]],
+         },
+    }
+
+ens_x451 = {
+    'aLat' : np.float64(0.0633), # in fm
+    'betaLat' : np.float64(3.55),
+    'LatSize' : np.float64(64.),
+    'ncfgs' : 2026,
+    'allConfigs': False,
+    'nfgsList': np.sort(np.concatenate([np.arange(7,393,16),np.arange(175,895,16),np.arange(911,1903,16),np.arange(1919,1952,16)])),
+    'weight_raw' : [f"{location}/data/X451/X451r001_rw_1.dat", f"{location}/data/X451/X451r001_rw_2.dat"],
+    'fs' : f'{location}/data/X451/cls21_X451_r001_single_hadrons_135_cnfgs.hdf5',
+    'singleTMaxFits' : [24,24,23,21,23,25,24,25,24,21,25,23,25,24,24,22,22,24,22,23,22,21,22,20,20,21,19,20],
+    'singleTMinResults' : [14,14,15,15,15,15, # P^{2} = 0
+                       11,12,12,12,12,11, # P^{2} = 1
+                       12,12,11,12,12,12, # P^{2} = 2
+                       12,12,11,12,12,11, # P^{2} = 3
+                       12,12,11,11], # P^{2} = 4,
+    's' : { 'iso_name' : iso_map['s'][0],
+            'iso_tag' : iso_map['s'][1],
+            'iso_label' : iso_map['s'][2],
+            'fm' : f'{location}/data/X451/cls21_X451_r001_{iso_map['s'][1]}_Sm1_fwd_135_cnfgs.hdf5',
+            'multiTMaxFits' : [[]],
+            'multiTMinResults' : [[12,12,13,15,15],
+                          [15,15,15,14,13,14,13,14],
+                          [13,14,12],
+                          [13,13],
+                          [14,13,13,14,15,15,15,13,14,15,14,12,11,14],
+                          [14,12,12,12,12,12,12,13,12,12,13,12,11,10,10],
+                          [13,11],
+                          [13, 10],
+                          [13,11,11,11,13,13,13,13,13,13,13,11,15,13]
+                          ],
+            'nonInteractingLevels' : [ ['K(1)N(1)', 'P(1)S(1)'], # P0_G1g 
+                                  [ 'K(0)N(0)', 'P(0)S(0)' , 'K(1)N(1)', 'P(1)S(1)'], # P0_G1u
+                                  ['K(1)N(1)', 'P(1)S(1)'], # P0_Hg
+                                  ['K(1)N(1)'], # P0_Hu
+                                  ['K(0)N(1)', 'P(0)S(1)', 'K(1)N(0)', 'P(1)S(0)'], # P1_G1
+                                  ['K(1)N(2)'], # P1_G2
+                                  ['K(0)N(2)', 'P(0)S(2)', 'K(1)N(1)', 'P(1)S(1)'], # P2_G
+                                  ['K(0)N(3)', 'P(0)S(3)', 'K(1)N(2)', 'P(1)S(2)'], # P3_G
+                                  ['K(0)N(3)', 'P(0)S(3)', 'K(1)N(2)', 'P(1)S(2)'], # P3_F1
+                                  ['K(0)N(3)', 'P(0)S(3)', 'K(1)N(2)', 'P(1)S(2)']], # P3_F2
+            'operatorRemovalChoice': [[]],
+            },
+    'd' : { 'iso_name' : iso_map['d'][0],
+            'iso_tag' : iso_map['d'][1],
+            'iso_label' : iso_map['d'][2],
+            'fm' : f'{location}/data/X451/cls21_X451_r001_{iso_map['d'][1]}_Sm2_fwd_135_cnfgs.hdf5',
+            'multiTMaxFits' : [[]],
+            'multiTMinResults' : [[15,15,14,14], #PSQ0 G1g
+                          [13,12,12,14,15,14,13,13,14], # PSQ0 G1u
+                          [14,14,15,15], # PSQ0 Hg
+                          [14,14,14,14,14], #PSQ0 Hu
+                          [15,13,14,15,15,15,14,15,15,14,14,15,13,12,12], #PSQ1 G1
+                          [13,15,15,13,13], #PSQ1 G2
+                          [15,14,15,14,14,15,14,14,15,15,15,15,15,14,15,16,15,13,12,12,12], #PSQ2 G
+                          [14,14,13,13,15,13], #PSQ3 F1 (notice that 1 and 4 and 5 are the same), better to rmeove 1
+                          [13,13,14,14,14,11],#PSQ3 F2
+                          [14,14,13,13,15,15,15,14,15,14,13,11,14], #PSQ3 G
+                          [15,15,15,15,15,15,15,14,14,13,14,14,13,11,15,15]], #PSQ4 G1]
+            'nonInteractingLevels': [ ['K(1)L(1)', 'P(1)X(1)'], # P0_G1g 
+                                  [ 'K(0)S(0)', 'K(0)L(0)', 'P(0)X(0)' , 'K(1)L(1)', 'P(1)X(1)'], # P0_G1u
+                                  ['K(1)L(1)', 'P(1)X(1)'], # P0_Hg
+                                  ['P(0)X(0)', 'K(1)L(1)','P(1)X(1)'], # P0_Hu
+                                  ['K(0)S(1)', 'K(0)L(1)', 'P(0)X(1)', 'K(1)L(0)', 'P(1)X(0)'], # P1_G1
+                                  ['P(0)X(1)'], # P1_G2
+                                  ['K(0)S(2)', 'K(0)L(2)', 'P(0)S(2)', 'K(1)L(1)', 'P(1)X(1)'], # P2_G
+                                  ['K(0)S(3)', 'K(0)L(3)', 'P(0)X(3)'], # P3_G
+                                  ['K(1)L(2)', 'P(1)S(2)'], # P3_F1
+                                  ['K(1)L(2)', 'P(1)S(2)'], # P3_F2
+                                  ['K(0)S(4)', 'K(0)L(4)', 'P(0)X(4)', 'K(1)S(1)', 'K(1)L(1)','P(1)X(1)']], # P4_G1 # The last ones are summed mom
+            'operatorRemovalChoice': [[]],
+            },
+    't' : { 'iso_name' : iso_map['t'][0],
+            'iso_tag' : iso_map['t'][1],
+            'iso_label' : iso_map['t'][2],
+            'fm' : f'{location}/data/X451/cls21_X451_r001_{iso_map['t'][1]}_Sm1_fwd.hdf5',
+            'multiTMaxFits' : [[]],
+            'multiTMinResults' : [[]],
+            'nonInteractingLevels' : [ []],
+            'operatorRemovalChoice': [[]],
+            },
+    'q' : { 'iso_name' : iso_map['q'][0],
+            'iso_tag' : iso_map['q'][1],
+            'iso_label' : iso_map['q'][2],
+            'fm' : f'{location}/data/X451/cls21_X451_r001_{iso_map['q'][1]}_Sm1_fwd.hdf5',
+            'multiTMaxFits': [[]],
+            'multiTMinResults': [[]],
+            'nonInteractingLevels': [[]],
+            'operatorRemovalChoice': [[]],
+                    },
+    }
+    
+
+ensembles = {
+    'A654': ens_a654,
+    'D200': ens_d200,
+    'N200': ens_n200,
+    'N201': ens_n201,
+    'N203': ens_n203,
+    'E250': ens_e250,
+    'X451': ens_x451,
+    'N451': ens_n451,
+    }
