@@ -105,17 +105,17 @@ def OPERATORS_SH(operator_name):
 # This function receives an operator name and returns a string in a nice way to put in the plots. 
 def OPERATORS_SH_ISOSPIN(the_hadron):
     the_hadron_isolabel = ''
-    if the_hadron=='P':
+    if the_hadron.upper()=='P':
         the_hadron_isolabel = '1'
-    elif the_hadron=='K':
+    elif the_hadron.upper()=='K':
         the_hadron_isolabel = r'$\frac{1}{2}$'
-    elif the_hadron=='N':
+    elif the_hadron.upper()=='N':
         the_hadron_isolabel = r'$\frac{1}{2}$'
-    elif the_hadron=='L':
+    elif the_hadron.upper()=='L':
         the_hadron_isolabel = '0'
-    elif the_hadron=='S':
+    elif the_hadron.upper()=='S':
         the_hadron_isolabel = '1'
-    elif the_hadron=='X':
+    elif the_hadron.upper()=='X':
         the_hadron_isolabel = r'$\frac{1}{2}$'
     return the_hadron_isolabel
 
