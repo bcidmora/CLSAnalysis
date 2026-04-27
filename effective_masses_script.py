@@ -277,7 +277,7 @@ if __name__=="__main__":
         myMatrixCorrelatorData.close()
     
     elif myWhichCorrelator=='mr':
-        myNameArchivo = myLocation + 'Matrix_correlators_ratios_' + myTypeRs + reBin + '_v%s.h5'%myVersion
+        myNameArchivo = f'{myLocation}Matrix_correlators_ratios_{myTypeRs}{reBin}_v{myVersion}.h5'
         myRatioMatrixCorrelatorData = h5py.File(myNameArchivo, 'r+')
         MultiCorrelatorEffectiveMass(myRatioMatrixCorrelatorData, myTypeRs)
         myRatioMatrixCorrelatorData.close()

@@ -1,7 +1,189 @@
 import os
 from pathlib import Path
 import set_of_plot_functions as vfp
+from dataclasses import dataclass
+from typing import Optional, Tuple
 
+
+### Here are some classes defined in order to make the selection of analysis tasks easier
+@dataclass
+class GEVPRuns:
+    t0min: Optional[int] = None
+    t0max: Optional[int] = None
+    sorting: str = "eigenvals" #'vecs_fix' #'eigenvals' # 'vecs_fix' # 'vecs_fix_norm' # 'vecs_var' # 'vecs_var_norm'
+    rs_sorting: Optional[str] = None
+    td: Optional[int] = None
+    
+@dataclass
+class OperatorRuns:
+    method: str = 'from_list' # 'adding' # 'removing' # 'from_list'
+    ops_list: Optional[list] = None
+
+
+@dataclass
+class FitRuns:
+    type_fit: str = '1' #'1' #'2' #'g'
+    # t0: int = 4
+    type_correlation: str = 'Correlated' # 'Uncorrelated'
+    one_tmin: bool = True # False
+    one_t0: bool = True # False
+    gevp_flag: bool = True
+
+
+@dataclass
+class BinRuns:
+    max_bin: int = 20
+    fit_range: Tuple[int, int] = (22, 36)
+    chosen_bin: int = 5
+    
+
+@dataclass
+class DispRuns:
+    mode: str = "both"  # abs / rel / both
+    
+
+@dataclass
+class Runs:
+    ensemble: str
+    correlator: str
+    rs_type: str
+    isospin: Optional[str]
+
+    rebin: bool
+    rb: int
+    
+    ### Flags
+    corrs: bool
+    eigenvals: bool
+    effmass: bool
+    fits: bool
+    disp: bool
+    corrdiff: bool
+    ops: bool
+    binning: bool
+
+    ### Suboptions deriving from flags
+    fit: FitRuns
+    gevp: GEVPRuns
+    binning_run: BinRuns
+    disp_run: DispRuns
+    ops_run: OperatorRuns    
+    
+    kbt: int 
+    dist_eff_mass: int
+    diag_corr: bool
+    
+import argparse
+### Comments:
+# this function allows you to put all inputs in the terminal as variables. Easier for the amount of variables we have
+def parse_args():
+    parser = argparse.ArgumentParser(description="Correlator analysis")
+
+    ### These are mandatory
+    parser.add_argument("-e", "--ensemble", required=True) # lowercase ensemble name
+    parser.add_argument("-c", "--correlator", required=True, choices=["s", "m", "mr"]) # single-, multi-hadron or ratio of corrs.
+    parser.add_argument("-rs", "--rs-type", required=True, choices=["jk", "bt"]) # resampling schemes    
+
+    ### These are optional
+    parser.add_argument("-is", "--isospin", default=None, choices=["s", "d", "t", "q"]) # isosinglet, isodoublet, isotriplet, isoquartet
+    
+    ### Binning info
+    parser.add_argument("--rebin", action="store_true")
+    parser.add_argument("-rb", "--rb", type=int, default=10)
+
+    ### What to do
+    parser.add_argument("--corrs", action="store_true") # Correlator analysis
+    parser.add_argument("--eigenvals", action="store_true") # GEVP
+    parser.add_argument("--effmass", action="store_true") # Effective masses
+    parser.add_argument("--fits", action="store_true") # Fitting procedure
+    parser.add_argument("--disp", action="store_true") # Dispersion relations
+    parser.add_argument("--corrdiff", action="store_true") # Correlated differences
+    parser.add_argument("--ops", action="store_true") # Operator analysis
+    parser.add_argument("--binning", action="store_true") # Binning analysis
+    
+    ### These are for the GEVP and ops analysis
+    parser.add_argument("--t0min", type=int)
+    parser.add_argument("--t0max", type=int)    
+    
+    ### these are for the dispersion relations
+    parser.add_argument("--disp-mode", default="both", choices=["abs", "rel", "both"])
+    
+    ### These are for the effective masses
+    parser.add_argument("--diag-corr", action="store_true")
+    parser.add_argument("--gevp-flag", action="store_true")
+    parser.add_argument("--dist-eff-mass", type=int, default=1)
+    
+    ### Fit params 
+    parser.add_argument("--fit-type", choices=["1", "2", "g"])
+    
+    ### These is for the Bootstrap
+    parser.add_argument("-kbt", "--k-bootstrap", type=int, default=500) # resampling schemes
+
+    return parser.parse_args()
+
+
+### Commments:
+# This function checks if all the needed parameters were included before running anything
+def VALIDATE_RUNS(r: Runs):
+    if r.eigenvals or r.ops:
+        if r.gevp.t0min is None or r.gevp.t0max is None:
+            raise ValueError("GEVP/OPS requires --t0min and --t0max")
+
+    if r.binning:
+        if r.binning_run is None:
+            raise ValueError("Binning requires binning config")
+
+    if r.disp:
+        if r.disp_run is None:
+            raise ValueError("Plotting dispersion mode missing --disp-mode")
+    
+    if r.fits and r.fit.type_fit is None:
+        raise ValueError("Fits require --fit-type")
+    
+    if r.correlator in ("m", "mr") and r.isospin is None:
+         raise ValueError("Isospin -is or --isospin is required for multi-hadron or ratio analysis")
+
+### Comments:
+# This routine selects which runs to do, for example the corrs, the effective masses, etc.
+def WhichRuns(args, the_ensemble_data):
+    fit_run = FitRuns(type_fit = args.fit_type if args.fits else "1")
+    gevp_run = GEVPRuns(t0min=args.t0min if (args.eigenvals or args.ops) else None,t0max=args.t0max if (args.eigenvals or args.ops) else None,)
+    bin_run = BinRuns()
+    disp_run = DispRuns(mode=args.disp_mode if args.disp else "both")
+
+    ops_run = OperatorRuns(method = "from_list", ops_list = the_ensemble_data.get("operatorsChoice", None))
+    kbt = args.k_bootstrap if args.rs_type == "bt" else 500
+    diag_corr = args.diag_corr
+    dist_eff_mass = args.dist_eff_mass
+
+    return Runs(
+        ensemble=args.ensemble.upper(),
+        correlator=args.correlator.lower(),
+        rs_type=args.rs_type,
+        isospin=args.isospin.lower() if args.isospin else None,
+
+        rebin=args.rebin,
+        rb=args.rb,
+
+        corrs=args.corrs,
+        eigenvals=args.eigenvals,
+        effmass=args.effmass,
+        fits=args.fits,
+        disp=args.disp,
+        corrdiff=args.corrdiff,
+        ops=args.ops,
+        binning=args.binning,
+
+        fit=fit_run,
+        gevp=gevp_run,
+        binning_run=bin_run,
+        disp_run=disp_run,
+        ops_run=ops_run,
+        kbt =kbt, 
+        diag_corr = diag_corr,
+        dist_eff_mass = dist_eff_mass,
+        )
+    
 ## Comments:
 # This function checks if a directory exists, if not then it creats it.
 def DIRECTORY_EXISTS(a_dir):
@@ -107,6 +289,8 @@ def IRREP_OP_INFO_PRINTING(the_new_archivo):
         # Print separation between blocks
         print()  # Blank line for spacing
         
+        
+        
 
 ### Comments:
 # Prints the index and the name of the irrep in the file and reminds one to choose a rest frame irrep
@@ -118,6 +302,15 @@ def IRREP_BIN_SIZE_INFO_PRINTING(the_irreps):
     for i in range(len(the_irreps)):
         info_list.append(the_irreps[i] + ' = ' + str(i))
     print(*info_list, sep='\n')
+    
+    
+    
+    
+    
+    
+    
 
 if __name__=="__main__":
    print('Nothing to run here, unless you want to change something.')
+   
+

@@ -109,6 +109,19 @@ def RESHAPING_EIGENVALS_MEAN(a):
     return np.asarray(np.transpose(a, (2,0,1)))
 
 
+# This function reshapes the data in the way: [N, N, nt, Ncfgs] -> [nt,Ncfgs N,N]
+# a: list with the data
+# def RESHAPING_EIGENVALS_RS(a):
+    # return np.asarray(np.transpose(a, (2,3,0,1)))
+
+# This function reshapes the eigenvalues from [nt, Ncfgs, Neigens] -->> [Neigens, Ncfgs, nt]. This is used to obtain the fits easier later. 
+# a: is the list of eigenvals, n configs, and time slices.
+# s: size of the matrix or amount of eigenvalues
+# def RESHAPING_EIGENVALS_FOR_FITS(a):
+    # return np.asarray(np.transpose(a, (2,1,0)))
+
+
+
 # This function reshapes the eigenvalues from [nt, Ncfgs, Neigens] -->> [Ncfgs, nt, Neigens]. This is used to obatin the fits easier later. 
 # a: is the list of eigenvals, n configs, and time slices.
 def RESHAPING_EIGEN_FOR_SORTING(a):
@@ -118,6 +131,12 @@ def RESHAPING_EIGEN_FOR_SORTING(a):
 # a: is the list of eigenvals, n configs, and time slices.
 def RESHAPING_EIGENVEC_FOR_SORTING(a):
     return np.asarray(np.transpose(a, (1,0,2,3)))
+
+
+# This function reshapes the eigenvalues from [Ncfgs, nt, Neigens] -->> [nt, Ncfgs, Neigens] . This is used to obatin the fits easier later. 
+# a: is the list of eigenvals, n configs, and time slices.
+# def RESHAPING_EIGEN_FOR_SORTING_REVERSE(a):
+    # return np.asarray(np.transpose(a, (1,0,2)))
 
 # This function reshapes the eigenvalues from [Neigens, Ncfgs, nt] -->> [nt, Ncfgs, Neigens] 
 # a: is the list of eigenvals, n configs, and time slices.
@@ -159,19 +178,11 @@ def SHRINK_MATRIX(c,low,up):
 # r: This is the resampled correlator matrix. It has the shape [N, N, nt, Ncfgs]
 # ss: this is the index of the row/column to be removed
 def REMOVE_ROWS_COLS(c,r,ss):
-    modified_mean_corr = []
-    modified_rs_corr  = []
-    for ij in range(len(c)):
-        the_mean_corr_ij = []
-        the_rs_corr_ij = []
-        if ij!=ss:
-            for ji in range(len(c)):
-                if ji!=ss:
-                    the_mean_corr_ij.append(np.array(c[ij][ji]))
-                    the_rs_corr_ij.append(np.array(r[ij][ji]))
-            modified_mean_corr.append(np.array(the_mean_corr_ij))
-            modified_rs_corr.append(np.array(the_rs_corr_ij))
-    return [np.array(modified_mean_corr), np.array(modified_rs_corr)]
+    c = np.asarray(c)
+    r = np.asarray(r)    
+    the_new_c = np.delete(np.delete(c, ss, axis=0), ss, axis=1)
+    the_new_r = np.delete(np.delete(r, ss, axis=0), ss, axis=1)
+    return the_new_c, the_new_r
 
 
 #Comments:
@@ -180,18 +191,9 @@ def REMOVE_ROWS_COLS(c,r,ss):
 # r: This is the resampled correlator matrix. It has the shape [N, N, nt, Ncfgs]
 # ss: this is the index of the row/column to be added
 def ADD_ROWS_COLS(c,r,ss):
-    modified_mean_corr = []
-    modified_rs_corr  = []
-    ss +=1
-    for ij in range(ss):
-        the_mean_corr_ij = []
-        the_rs_corr_ij = []
-        for ji in range(ss):
-            the_mean_corr_ij.append(np.array(c[ij][ji]))
-            the_rs_corr_ij.append(np.array(r[ij][ji]))
-        modified_mean_corr.append(np.array(the_mean_corr_ij))
-        modified_rs_corr.append(np.array(the_rs_corr_ij))
-    return [np.array(modified_mean_corr), np.array(modified_rs_corr)]
+    c = np.asarray(c)
+    r = np.asarray(r)
+    return c[:ss+1, :ss+1], r[:ss+1, :ss+1]
 
 
 #Comments:
@@ -200,17 +202,10 @@ def ADD_ROWS_COLS(c,r,ss):
 # r: This is the resampled correlator matrix. It has the shape [N, N, nt, Ncfgs]
 # ss: This is a list of operators to be included
 def CHOOSE_OPS(c,r,ss):
-    modified_mean_corr = []
-    modified_rs_corr  = []
-    for ij in ss:
-        the_mean_corr_ij = []
-        the_rs_corr_ij = []
-        for ji in ss:
-            the_mean_corr_ij.append(np.array(c[ij][ji]))
-            the_rs_corr_ij.append(np.array(r[ij][ji]))
-        modified_mean_corr.append(np.array(the_mean_corr_ij))
-        modified_rs_corr.append(np.array(the_rs_corr_ij))
-    return [np.array(modified_mean_corr), np.array(modified_rs_corr)]
+    c = np.asarray(c)
+    r = np.asarray(r)
+    the_index = np.ix_(ss,ss)
+    return c[the_index], r[the_index]
 
 
 
@@ -334,8 +329,6 @@ def DOING_EFFECTIVE_MASSES_EIGENVALUES(gevp_group, the_dist_eff_mass, the_type_r
         
         group_em_t0.create_dataset('Mean', data = np.asarray(the_eff_mass_mean))
         group_em_t0.create_dataset('Sigmas',data = np.asarray(the_cov_eff_mass))
-
-
 
 
 ## ------------------- GEVP --------------------------------------
@@ -1137,7 +1130,7 @@ def REWEIGHTS(the_rw_list, the_nfs):
             the_weight = np.asarray(np.loadtxt(the_rw_list[0], unpack=True)[1])
         elif 'rw.dat' in the_rw_list[0]:
             the_pre_weight = np.asarray(np.loadtxt(the_rw_list[0], unpack=True))
-            the_weight = np.asarray([the_pre_weight[jj][1] * the_pre_weight[jj][2] for jj in range(len(the_pre_weight))])
+            the_weight = np.asarray([the_pre_weight[1][jj] * the_pre_weight[2][jj] for jj in range(len(the_pre_weight[0]))])
         else:
             print('Error: Please check name reweighting factors file.')
     else:

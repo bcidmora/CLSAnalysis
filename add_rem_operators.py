@@ -7,7 +7,7 @@ import os
 import sys
 import set_of_functions as vf
 
-def OperatorsAnalysis(the_matrix_correlator_data, the_type_rs, the_operator_analysis_method, the_irreps, **kwargs):
+def OperatorsAnalysis(the_matrix_correlator_data, the_type_rs, the_operator_analysis_method, the_irreps, the_t0_min, the_t0_max, **kwargs):
     
     print("                     OPERATORS ANALYSIS PROCESS \n")
     ### The list of total irreps
@@ -181,7 +181,7 @@ if __name__=="__main__":
     myArchivo = f'{myLocation}Matrix_correlators_{myTypeRs}{reBin}_v{myVersion}.h5'
     myMatrixCorrelatorData = h5py.File(myArchivo,'r+')
     
-    OperatorsAnalysis(myMatrixCorrelatorData, myTypeRs, myOperatorMethod, myIrreps, ops_analysis_list = myListOperators)
+    OperatorsAnalysis(myMatrixCorrelatorData, myTypeRs, myOperatorMethod, myIrreps, myT0Min, myT0Max, ops_analysis_list = myListOperators)
     
     myArchivo.close()
     

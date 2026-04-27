@@ -1,0 +1,648 @@
+import numpy as np
+import h5py
+import time
+from iminuit import Minuit
+import sys
+import os
+# import set_of_functions as vf
+import set_of_analysis_functions as vfa
+import set_of_layout_functions as vfl
+
+import warnings
+warnings.filterwarnings('ignore')
+
+the_fit_map = {
+        '1': (2, vfa.SINGLE_EXPONENTIAL, ('a0', 'e0'), "Single Exponential Fit"),
+        '2': (4, vfa.DOUBLE_EXPONENTIAL, ('a0', 'e0', 'a1','e1'), "Double Exponential Fit"),
+        'g': (4, vfa.GEOMETRIC_FORM, ('a0', 'e0', 'b','m'), "Geometric series Fit" ),}
+
+
+def FitSingleCorrelators(the_data, the_fit_data, the_type_rs, the_list_tmaxs, the_irreps, **kwargs): 
+    
+    ### If only one tmin needs to be done for the fitting
+    the_only_one_tmin = kwargs.get('one_tmin')
+    
+    ### The type of fit
+    the_type_fit = kwargs.get('type_fit')
+    
+    ### Correlated or uncorrelated
+    type_correlated_fit = kwargs.get('type_correlation')
+    
+    ### The name of the irreps
+    the_s_irreps = list(the_data.keys())
+    
+    try:
+        the_n_params, da_minimization, the_fit_params, the_string_fit = the_fit_map[the_type_fit]
+        the_dof = np.zeros(the_n_params)
+    except KeyError:
+        raise ValueError(f"Invalid fit type: {the_type_fit}")
+    
+    print(f"                     FITTING: {the_string_fit}\n")
+    
+    ### Loop over the irreps
+    for the_irrep in the_s_irreps:
+        
+        ### List of operators of this irrep
+        the_op_list = list(the_data[f'{the_irrep}/Operators'])
+        print('----------------------------------------------------------------------------------------')
+        print(f'IRREP ({the_irreps.index(the_irrep)+1}/{len(the_irreps)}): {the_irrep}\n   --->>   Operators list: ')
+        
+        for item in the_op_list: print(f'           {item.decode("utf-8")}')    
+        print('----------------------------------------------------------------------------------------')
+        
+        ### Check if this part already exists
+        if the_irrep not in the_fit_data.keys(): 
+            dis_irrep = the_fit_data.create_group(the_irrep)
+        else: 
+            dis_irrep = the_fit_data[the_irrep]
+        
+        if 'Operators' not in dis_irrep.keys(): 
+            dis_irrep.create_dataset('Operators', data = the_op_list)
+        
+        if f'{the_type_fit}exp' not in dis_irrep.keys(): 
+            the_one_exp_fit = dis_irrep.create_group(f'{the_type_fit}exp')
+            the_tmin_data = the_one_exp_fit.create_group('Tmin')
+        else:
+            the_one_exp_fit = the_fit_data[f'{the_irrep}/{the_type_fit}exp']
+            the_tmin_data = the_one_exp_fit['Tmin']
+        
+        the_corr = the_data[the_irrep].get('Correlators')
+        the_corr_fit = np.asarray(the_corr.get('Real/Mean'), dtype = np.float64)
+        the_corr_fit_rs_raw = np.asarray(the_corr.get('Real/Resampled'), dtype = np.float64)
+        the_corr_fit_rs = vfa.NT_TO_NCFGS(the_corr_fit_rs_raw)
+
+        the_cov_matrix = np.asarray(the_corr.get('Real/Covariance_matrix'), dtype = np.float64)
+        the_eff_energy_hint = np.asarray(the_data[the_irrep].get('Effective_masses/Mean'))
+        the_nt = np.asarray(the_data[the_irrep].get('Time_slices'))  
+        
+        ### Gotta make this a variable
+        j = the_irreps.index(the_irrep)
+        
+        if the_only_one_tmin and kwargs.get('the_tmin')!=None:
+            the_ul = int(the_list_tmaxs[j]) - the_nt[0] # This is the max nt given by us, shifted.
+            the_ll = [the_tmin - the_nt[0]] # lower limit (min nt for the fit)
+        else:
+            the_ul = int(the_list_tmaxs[j]) - the_nt[0]
+            # the_ll = np.arange(the_tmin - the_nt[0], int(the_ul * 0.85))
+            the_ll = np.arange(0, int(the_ul * 0.85))
+        
+        if type_correlated_fit=='Correlated':
+            if 'Correlated' in the_tmin_data.keys(): 
+                del the_tmin_data['Correlated']
+            the_fit_data_group = the_tmin_data.create_group('Correlated')
+            the_cov_matrix_fit = the_cov_matrix
+        elif type_correlated_fit=='Uncorrelated':
+            if 'Uncorrelated' in the_tmin_data.keys(): 
+                del the_tmin_data['Uncorrelated']
+            the_fit_data_group = the_tmin_data.create_group('Uncorrelated') 
+            the_cov_matrix_fit = np.zeros((len(the_cov_matrix), len(the_cov_matrix)))
+            np.fill_diagonal(the_cov_matrix_fit, np.diag(the_cov_matrix))
+        else: raise ValueError("Invalid fit type")
+
+        the_results = {'the_energies': [], 'the_sigmas': [], 'the_chi_vals': [], 'the_sigmas_chi': [], 'the_resampled': []}
+        
+        begin_time = time.time()
+        for the_yy in the_ll:
+            print(f'Tmin = {the_yy + the_nt[0]}|| TMax = {the_ul + the_nt[0]}')
+            
+            the_nt_slice = the_nt[the_yy:the_ul]
+            the_corr_fit_slice = the_corr_fit[the_yy:the_ul]
+            
+            da_hint = vfa.BEST_GUESS(the_corr_fit_slice, the_nt_slice, the_type_fit)
+            
+            if False in np.isnan(da_hint):
+                the_dof = da_hint
+            else: 
+                the_dof = np.zeros_like(da_hint)
+                the_dof[0], the_dof[1] = 0.1, the_eff_energy_hint[the_yy]
+                
+            the_small_cov = vfa.SHRINK_MATRIX(the_cov_matrix_fit, the_yy, the_ul)   
+            the_inverse_cov_m = np.linalg.inv(the_small_cov) 
+            
+            the_fit_choice = vfa.My_Fits(da_minimization, the_nt_slice, the_corr_fit_slice, the_inverse_cov_m, the_dof, np.float64(0.))    
+            
+            the_fit = Minuit(the_fit_choice, the_dof, name = the_fit_params)
+            
+            the_fit.errordef, the_fit.tol = 1e-8, 1e-10
+            the_fit.scan()
+            the_fit.migrad(iterate=10,ncall=5000)
+            
+            e0 = np.double(the_fit.values['e0'])
+            
+            the_results['the_energies'].append(e0)
+            the_results['the_chi_vals'].append(the_fit.fval)
+            
+            the_dof_rs = the_dof.copy()
+            the_dof_rs[0], the_dof_rs[1] = np.double(the_fit.values['a0']), e0          
+            
+            the_n_rs = len(the_corr_fit_rs)
+            the_chi_vals_rs = np.empty(the_n_rs)
+            the_resampled_vals = np.empty(the_n_rs + 1)
+            the_resampled_vals[0] = e0
+
+            for zz in range(the_n_rs):
+                the_corr_rs_slice = the_corr_fit_rs[zz][the_yy:the_ul]
+                
+                the_fit_choice_rs = vfa.My_Fits(da_minimization, the_nt_slice, the_corr_rs_slice, the_inverse_cov_m, the_dof_rs, np.double(0.))
+                
+                the_fit_rs = Minuit(the_fit_choice_rs, the_dof, name = the_fit_params)
+                
+                the_fit_rs.errordef, the_fit_rs.tol = 1e-8, 1e-7
+                the_fit_rs.scan()
+                the_fit_rs.migrad(iterate=10, ncall=5000)
+                
+                e0_rs = np.double(the_fit_rs.values['e0'])
+                the_chi_vals_rs[zz] = the_fit_rs.fval
+                the_resampled_vals[zz + 1] = e0_rs
+
+            the_rs_vals = the_resampled_vals[1:]
+            
+            the_results['the_sigmas'].append(vfa.STD_DEV(the_rs_vals, np.mean(the_rs_vals), the_type_rs))
+            the_results['the_sigmas_chi'].append(vfa.STD_DEV(the_chi_vals_rs, np.mean(the_chi_vals_rs), the_type_rs))
+            the_results['the_resampled'].append(the_resampled_vals)
+            
+        the_results['the_resampled'] = np.array(the_results['the_resampled'])
+        
+        the_fit_data_group.create_dataset('Resampled', data = the_results['the_resampled'])
+        the_fit_data_group.create_dataset('Mean', data = np.array([the_ll + the_nt[0], [the_ul + the_nt[0]]*(len(the_ll)), the_results['the_energies'], the_results['the_sigmas'], the_results['the_chi_vals'], the_results['the_sigmas_chi']]))
+
+        print(f'Minimization {the_string_fit}: DONE!')
+        end_time = time.time()        
+        print(f'Time taken: {round((end_time-begin_time)/60,2)} min')
+    
+    
+def FitMultiCorrelators(the_data, the_fit_data, the_type_rs, the_list_tmaxs, the_irreps, **kwargs):
+    
+    print("                     FITTING \n")
+    
+    ### Fits only one minimum time slice
+    the_only_one_tmin = kwargs.get('one_tmin')
+    
+    ### Fits only one t0 chosen
+    the_only_one_t0 = kwargs.get('one_t0')
+    
+    ### This is the type of fit
+    the_type_fit = kwargs.get('type_fit')
+    
+    ### Correlated or uncorrelated fit
+    the_type_correlated_fit = kwargs.get('type_correlation')
+    
+    ### For the single-pivot diagonalization
+    the_td = kwargs.get('the_td')
+    
+    ### The names of the irreps in this ensemble
+    the_m_irreps = list(the_data.keys())
+    
+    ### If only one t0 was chosen, here it takes it
+    if the_only_one_t0:
+        the_t0_s = [int(kwargs.get('chosen_t0'))]
+    else:
+        the_t0_s = sorted([int(item[3:]) for item in list(the_data[f'{the_m_irreps[0]}/GEVP'])])
+    
+    try:
+        the_n_params, da_minimization, the_fit_params, the_string_fit = the_fit_map[the_type_fit]
+        the_dof = np.zeros(the_n_params)
+    except KeyError:
+        raise ValueError(f"Invalid fit type: {the_type_fit}")
+    
+    print(f"                     FITTING: {the_string_fit}\n")
+    
+    ### Loop over the irreps
+    for the_irrep in the_m_irreps:           
+         
+        ### Getting the time slices of this dataset
+        the_nt = np.array(the_data[the_irrep].get('Time_slices'))
+        
+        ### These are the operators used for the full matrix
+        the_op_list = list(the_data[f'{the_irrep}/Operators'])
+        
+        print('----------------------------------------------------------------------------------------')
+        print(f'IRREP ({the_irreps.index(the_irrep)+1}/{len(the_irreps)}): {the_irrep}\n   --->>   Operators list: ')
+        for item in the_op_list: 
+            print(f'           {item.decode("utf-8")}')
+        print('----------------------------------------------------------------------------------------')
+        
+        ### This is creating a path for the irrep
+        if the_irrep not in the_fit_data.keys(): 
+            dis_irrep = the_fit_data.create_group(the_irrep)
+        else: 
+            dis_irrep = the_fit_data[the_irrep]
+        
+        ### It creates a path to store the operators
+        if 'Operators' not in dis_irrep.keys():
+            dis_irrep.create_dataset('Operators', data = the_op_list)
+        
+        ### This is in case of the ratio of correlators are chosen
+        if kwargs.get('ratio_on')!=None:
+            if 'Single_hadron_corrs' in dis_irrep.keys(): 
+                del the_fit_data[f'{the_irrep}/Single_hadron_corrs']
+            dis_irrep.create_dataset('Single_hadron_corrs', data = list(the_data[f'{the_irrep}/Single_hadron_corrs']))
+        
+        ### Searching if the path for the data exists
+        if f'{the_type_fit}exp' not in dis_irrep.keys(): 
+            the_exp_fit = dis_irrep.create_group(f'{the_type_fit}exp')
+        else:
+            the_exp_fit = the_fit_data[f'{the_irrep}/{the_type_fit}exp']
+            
+            
+        ### Checking the GEVP was done before
+        if 'GEVP' in list(the_data[the_irrep].keys()) and kwargs.get('gevp')==True:            
+            
+            begin_time_tmin = time.time()
+            for the_t0 in the_t0_s:
+                print('T0 equal: ', the_t0)
+                
+                ### Checking if the path inside this file exists
+                if f't0_{the_t0}' not in the_exp_fit.keys():   
+                    t0_group = the_exp_fit.create_group(f't0_{the_t0}')
+                    tmin_data = t0_group.create_group('Tmin')
+                else:
+                    t0_group = the_exp_fit[f't0_{the_t0}']
+                    tmin_data = t0_group['Tmin']
+                
+                ### Retrieving data for the fits (eigenvalues and resamples)
+                the_corr = np.asarray(the_data[f'{the_irrep}/GEVP/t0_{the_t0}'])
+                vf.DOING_THE_FITTING(the_corr, the_nt, the_type_rs, the_irreps, the_irrep, tmin_data, the_type_correlated_fit, the_type_fit, the_only_one_tmin, the_t0, the_list_tmaxs, da_minimization, the_fit_params)
+            end_time_tmin = time.time()
+            print(f'Time taken: {round((end_time_tmin-begin_time_tmin)/60,2)} mins')
+            print(f'Minimization {the_type_fit}: E vs Tmin DONE!')
+        else: raise ValueError('GEVP needs to be calculated first :D')
+            
+        ### Checking the Operators Analysis was done before
+        if 'Operators_Analysis' in list(the_data[the_irrep].keys()) and kwargs.get('operators_analysis')==True:    
+            
+            print('----------------------------------------------------------------------------------------')
+            print(f'IRREP ({the_irreps.index(the_irrep)+1}/{len(the_irreps)}): {the_irrep}' )
+            
+            if kwargs.get('the_operator_analysis_method')=='from_list': 
+                the_method = 'Ops_chosen_'
+                # the_list_tmaxs = kwargs.get('the_chosen_list_max')
+            
+            elif kwargs.get('the_operator_analysis_method')=='adding': the_method = 'Add_Op_'
+                
+            elif kwargs.get('the_operator_analysis_method')=='removing': the_method = 'Remove_Op_'
+            
+            else: sys.exit("No method for the operators analysis chosen")
+                
+            the_list_of_chosen_ops = list(filter(lambda x: the_method in x, the_data[the_irrep+'/Operators_Analysis'].keys()))
+            
+                ### Loop over those elements
+            for the_op_item in the_list_of_chosen_ops:
+                print(f"The chosen Operators: {the_op_item}")
+                if the_only_one_t0:
+                    the_t0_s = [int(kwargs.get('chosen_t0'))]
+                else:
+                    the_t0_s = sorted([int(item[3:]) for item in list(the_data[f'{the_irrep}/Operators_Analysis/{the_op_item}'])])
+                
+                ### Searching if the path for the data exists
+                if f'{the_op_item}_{the_type_fit}exp' not in dis_irrep.keys(): 
+                    the_exp_fit = dis_irrep.create_group(f'{the_op_item}_{the_type_fit}exp')
+                else:
+                    the_exp_fit = the_fit_data[f'{the_irrep}/{the_op_item}_{the_type_fit}exp']
+                
+                begin_time_tmin = time.time()
+                for the_t0 in the_t0_s:
+                    print(f'Modified Eigenvalues -->> T0 equal: {the_t0}')
+                    
+                    ### Checking if the path inside this file exists
+                    if f't0_{the_t0}' not in the_exp_fit.keys():   
+                        t0_group = the_exp_fit.create_group(f't0_{the_t0}')
+                        tmin_data = t0_group.create_group('Tmin')
+                    else:
+                        t0_group = the_exp_fit[f't0_{the_t0}']
+                        tmin_data = t0_group['Tmin']
+                    
+                    ### Retrieving data for the fits (eigenvalues and resamples)
+                    the_corr = the_data[f'{the_irrep}/Operators_Analysis/{the_op_item}/t0_{the_t0}']
+                    vf.DOING_THE_FITTING(the_corr, the_nt, the_type_rs, the_irreps, the_irrep, tmin_data, the_type_correlated_fit, the_type_fit, the_only_one_tmin, the_t0, the_list_tmaxs, da_minimization, the_fit_params)
+                end_time_tmin = time.time()
+                print(f'Time taken: {round((end_time_tmin-begin_time_tmin)/60,2)} mins')
+                print(f'Minimization {the_type_fit}: E vs Tmin DONE!')       
+                
+def FitRatioMultiCorrelators(the_data, the_fit_data, the_type_rs, the_list_tmaxs, the_irreps, **kwargs):
+    
+    print("                     FITTING \n")
+    
+    ### Fits only one minimum time slice
+    the_only_one_tmin = kwargs.get('one_tmin')
+    
+    ### Fits only one t0 chosen
+    the_only_one_t0 = kwargs.get('one_t0')
+    
+    ### This is the type of fit
+    the_type_fit = kwargs.get('type_fit')
+    
+    ### Correlated or uncorrelated fit
+    the_type_correlated_fit = kwargs.get('type_correlation')
+    
+    ### The names of the irreps in this ensemble
+    the_m_irreps = list(the_data.keys())
+    
+    ### How many irreps do you want to study    
+    if kwargs.get('nr_irreps')!=None:
+        the_first_irrep = 0
+        the_last_irrep = int(kwargs.get('nr_irreps'))
+    else:
+        ### This one checks for an irrep in particular
+        if kwargs.get('first_irrep')!=None and kwargs.get('last_irrep')!=None:
+            the_first_irrep = int(kwargs.get('first_irrep'))-1
+            the_last_irrep = int(kwargs.get('last_irrep'))
+        elif kwargs.get('last_irrep')!=None and kwargs.get('first_irrep')==None:
+            the_first_irrep = 0
+            the_last_irrep = int(kwargs.get('last_irrep'))
+        elif kwargs.get('first_irrep')!=None and kwargs.get('last_irrep')==None:
+            the_first_irrep = int(kwargs.get('first_irrep'))-1
+            the_last_irrep = len(the_m_irreps)
+        elif kwargs.get('first_irrep')==None and kwargs.get('last_irrep')==None:
+            the_first_irrep = 0
+            the_last_irrep = len(the_m_irreps)
+    
+    m_irreps = the_m_irreps[the_first_irrep:the_last_irrep]
+    
+    ### If only one t0 was chosen, here it takes it
+    if the_only_one_t0:
+        the_t0_s = [int(kwargs.get('chosen_t0'))]
+    else:
+        the_t0_s = sorted([int(item[3:]) for item in list(the_data[the_m_irreps[0]+'/GEVP'])])
+    
+    ### Type of fit for the procedure. 
+    ### 1-exponential fit
+    if the_type_fit=='1':
+        the_dof = np.zeros((1,2))
+        da_minimization = vf.SINGLE_EXPONENTIAL
+        the_fit_params = ('a0', 'e0')
+    ### 2-exponential fit
+    elif the_type_fit=='2':
+        the_dof = np.zeros((1,4))
+        da_minimization = vf.DOUBLE_EXPONENTIAL
+        the_fit_params = ('a0', 'e0', 'a1','e1')
+    elif the_type_fit=='g':
+        the_dof = np.zeros((1,4))
+        da_minimization = vf.GEOMETRIC_FORM
+        the_fit_params = ('a0', 'e0', 'b','m')
+    
+    ### Loop over the irreps
+    for the_irrep in the_m_irreps:           
+         
+        ### Getting the time slices of this dataset
+        the_nt = np.array(the_data[the_irrep].get('Time_slices'))
+        
+        ### These are the operators used for the full matrix
+        the_op_list = list(the_data[the_irrep+'/Operators'])
+        
+        print('----------------------------------------------------------------------------------------')
+        print('IRREP (%s/'%str(the_irreps.index(the_irrep)+1) + '%s): '%str(len(the_irreps)) + str(the_irrep) + '\n   --->>   Operators list: ')
+        for item in the_op_list: print('           ' + str(item.decode("utf-8")))
+        print('----------------------------------------------------------------------------------------')
+        
+        ### This is creating a path for the irrep
+        if the_irrep not in the_fit_data.keys(): 
+            dis_irrep = the_fit_data.create_group(the_irrep)
+        else: 
+            dis_irrep = the_fit_data[the_irrep]
+        
+        ### It creates a path to store the operators
+        if 'Operators' not in dis_irrep.keys():
+            dis_irrep.create_dataset('Operators', data=the_op_list)
+        
+        ### Searching if the path for the data exists
+        if '%sexp'%the_type_fit not in dis_irrep.keys(): 
+            the_exp_fit = dis_irrep.create_group('%sexp'%the_type_fit)
+        else:
+            the_exp_fit = the_fit_data[the_irrep+'/%sexp'%the_type_fit]
+            
+            
+        begin_time_tmin = time.time()
+        for the_t0 in the_t0_s:
+            print('T0 equal: ', the_t0)
+            
+            ### Checking if the path inside this file exists
+            if 't0_%s'%the_t0 not in the_exp_fit.keys():   
+                t0_group = the_exp_fit.create_group('t0_%s'%the_t0)
+                tmin_data = t0_group.create_group('Tmin')
+            else:
+                t0_group = the_exp_fit['t0_%s'%the_t0]
+                tmin_data = t0_group['Tmin']
+            
+            ### Retrieving data for the fits (eigenvalues and resamples)
+            the_corr = the_data[the_irrep].get('GEVP/t0_%s'%the_t0)
+            
+             ### Loop over all the t0 chosen
+            the_corr_fit = np.array(the_corr.get('Eigenvalues/Mean')).real 
+            the_corr_fit_rs = np.array(the_corr.get('Eigenvalues/Resampled')).real 
+            
+            ### Retrieving the covariance matrix for the fits
+            the_cov_matrix = np.array(the_corr.get('Eigenvalues/Covariance_matrix')).real 
+            
+            ### Effective Masses are used as a prior
+            the_eff_energy_hint = np.array(the_corr.get('Effective_masses/Mean'))
+            
+            ### Creating a folder for correlated or uncorrelated fits
+            if the_type_correlated_fit=='Correlated':
+                if 'Correlated' in tmin_data.keys(): del tmin_data['Correlated']
+                # the_fit_data = tmin_data.create_group('Correlated')
+                the_fit_group = tmin_data.create_group('Correlated')
+            elif the_type_correlated_fit=='Uncorrelated':
+                if 'Uncorrelated' in tmin_data.keys(): del tmin_data['Uncorrelated']
+                the_fit_data = tmin_data.create_group('Uncorrelated')
+            
+            ### Creating a folder for the fits of the central values
+            # the_mean_data = the_fit_data.create_group('Mean')
+            the_mean_data = the_fit_group.create_group('Mean')
+            
+            ### Creating a folder for the resampled data fits
+            # the_rs_data = the_fit_data.create_group('Resampled')
+            the_rs_data = the_fit_group.create_group('Resampled')
+            
+            ### Loop over eigenvalues
+            for ls in range(the_corr_fit.shape[0]):
+
+                ### Now also loop over each non-interacting combination
+                for nn in range(the_corr_fit.shape[1]):
+                    
+                    ### This is the modified time range to go from item 0 until the end without caring about labeling
+                    nt_mod = np.arange(0,len(the_nt))
+                    if the_only_one_tmin: 
+                        
+                        ### Upper limit for the fit
+                        the_ul = [x-the_nt[0] for x in the_list_tmaxs[the_irreps.index(the_irrep)]]
+                        
+                        ### Lower limit for the fit
+                        the_ll = [nt_mod[5]]                    
+                    else: 
+                        ### Upper limir for the fit
+                        the_ul = [x-the_nt[0] for x in the_list_tmaxs[the_irreps.index(the_irrep)]]
+                        
+                        ### Lower limit for the fit depends on the upper limit
+                        # the_ll = np.arange(nt_mod[0]+1, int(the_ul[ls]*(.8 - (0.025*ls))))
+                        the_ll = np.arange(nt_mod[0]+1, int(nt_mod[-1]*.75))
+                    
+                    ### Choosing the covariance matrix depending on the type of correlated fit
+                    if the_type_correlated_fit=='Correlated':
+                        the_cov_matrix_fit = the_cov_matrix[ls,nn]
+                    elif the_type_correlated_fit=='Uncorrelated':
+                        the_cov_matrix_fit = np.zeros((len(the_cov_matrix[ls,nn]), len(the_cov_matrix[ls,nn])))
+                        np.fill_diagonal(the_cov_matrix_fit, np.diag(the_cov_matrix[ls,nn]))  
+                    
+                    
+                    the_energies_list, the_sigmas_list, the_chi_vals_list, the_sigmas_chi_list = [], [], [], []
+                    another_list = []
+                    ### Loop over all the tmins
+                    for yy in the_ll:
+                        print('Tmin = ' + str(yy+the_nt[0]) + '|| TMax = %s'%(the_ul[ls]+the_nt[0]))
+                        another_useful_list = []
+                        
+                        ### This is finding a good guess to make the fit converge easier.
+                        da_hint = vf.BEST_GUESS(the_corr_fit[ls,nn][yy:the_ul[ls]], the_nt[yy:the_ul[ls]], the_type_fit) 
+                        if False in np.isnan(da_hint):
+                            the_dof = da_hint
+                        else: 
+                            the_dof = np.zeros((1,len(da_hint)));
+                            the_dof = the_dof[0]
+                            the_dof[0] = np.float64(0.1)
+                            the_dof[1] = np.float64(the_eff_energy_hint[ls,nn][yy])
+                        
+                        ### Reduces the covariance matrix to the size of the time range chosen
+                        the_small_cov = vf.SHRINK_MATRIX(the_cov_matrix_fit, yy, the_ul[ls])
+                        the_sigma_matrix = np.array(the_small_cov, dtype=np.float64)
+                        
+                        ### This takes the inverse of the covariance matrix
+                        the_inverse_cov_m = np.linalg.inv(the_sigma_matrix)
+                        
+                        ### This chooses the fit function to use 
+                        the_fit_choice = vf.My_Fits(da_minimization, the_nt[yy:the_ul[ls]], the_corr_fit[ls,nn][yy:the_ul[ls]], the_inverse_cov_m, the_dof, np.float64(the_t0))
+                        
+                        ### Fitting started
+                        the_fit = Minuit(the_fit_choice, the_dof, name=the_fit_params)
+                        
+                        the_fit.errordef, the_fit.tol = 1e-8, 1e-10
+                        the_fit.scan()
+                        the_fit.migrad(iterate=10,ncall=5000)
+                        
+                        ### Energy values
+                        e0 = np.float128(the_fit.values['e0'])
+                        
+                        ### The fitted energy results from the central values are used as an initial guess for the resamples
+                        the_dof_rs = the_dof
+                        the_dof_rs[0], the_dof_rs[1] = np.float64(the_fit.values['a0']), e0
+                        
+                        the_energies_list.append(e0); the_chi_vals_list.append(np.float64(the_fit.fval)); another_useful_list.append(e0)
+                        
+                        zz=0
+                        chi_vals_rs_list = []
+                        ### Loop over the resamples
+                        for zz in range(the_corr_fit_rs.shape[2]):
+                            my_fit_choice_rs = vf.My_Fits(da_minimization, the_nt[yy:the_ul[ls]], the_corr_fit_rs[ls, nn, zz, yy:the_ul[ls]], the_inverse_cov_m, the_dof_rs, np.float64(the_t0))
+                            the_fit_rs = Minuit(my_fit_choice_rs, the_dof_rs, name=the_fit_params)
+                            
+                            the_fit_rs.errordef, the_fit_rs.tol = 1e-8, 1e-7
+                            the_fit_rs.scan()
+                            the_fit_rs.migrad(iterate=10, ncall=5000)
+                            
+                            e0_rs = np.float64(the_fit_rs.values['e0']); chi_vals_rs_list.append(the_fit_rs.fval); another_useful_list.append(e0_rs)
+                        
+                        ### This is the sigma for the fittings
+                        sigma_fit_rs = vf.STD_DEV(another_useful_list[1:], np.mean(another_useful_list[1:]), the_type_rs)
+                        sigma_chi_rs = vf.STD_DEV(chi_vals_rs_list, np.mean(chi_vals_rs_list), the_type_rs)
+                        
+                        the_sigmas_list.append(sigma_fit_rs); the_sigmas_chi_list.append(sigma_chi_rs); another_list.append(np.array(another_useful_list))
+                    print('E = %s READY'%ls)    
+                    
+                    # inside both loops
+                    lambda_group_name = f"lambda_{ls}_nonint_{nn}"
+
+                    the_rs_data.create_dataset(lambda_group_name, data=np.array(another_list))
+                    the_mean_data.create_dataset(lambda_group_name,data=np.array([the_ll + the_nt[0],                                    [the_ul[ls]+the_nt[0]]*len(the_ll),the_energies_list,the_sigmas_list,the_chi_vals_list,the_sigmas_chi_list]))
+    
+                    # the_rs_data.create_dataset('lambda_%s'%ls, data=np.array(another_list))
+                    # the_mean_data.create_dataset('lambda_%s'%ls, data =np.array([the_ll + the_nt[0], [the_ul[ls]+the_nt[0]]*len(the_ll), the_energies_list, the_sigmas_list, the_chi_vals_list, the_sigmas_chi_list]))         
+                    
+                    
+                end_time_tmin=time.time()
+                print('Time taken: ' + str(round((end_time_tmin-begin_time_tmin)/60,2))+' min')
+                print('Minimization %s exp: E vs Tmin DONE!'%the_type_fit)
+                # print('Minimization %s exp: E vs Tmin DONE!'%the_string_fit)
+            
+        
+
+if __name__=="__main__":
+    
+    ### This is the ensemble you are analysing
+    myEns = str(sys.argv[1]).upper()
+    
+    ### Single hadrons 's' or multihadrons 'm' correlators
+    myWhichCorrelator = str(sys.argv[2]).lower()[0]
+    
+    ### type of resampling done before
+    myTypeRs = str(sys.argv[3]).lower()
+    
+    ### Rebinning
+    myRebinOn = str(sys.argv[4])
+    
+    myRb = 1
+    myVersion = '_test'
+    
+    ### Type of fit, it could be 1-exp '1', 2-exp '2' or geometric 'g'
+    myTypeFit = '1' # '2' # 'g'
+    
+    ### Correlated or uncorrelated fit
+    myTypeCorrelation = 'Correlated' # 'Uncorrelated'
+    
+    ### One can choose only 1 tmin to do or all of them in a certain range.
+    myOneTMin = True 
+    
+    ### ALso for the gevp results, one can do all t0s or just one
+    myOneT0 =  True
+    myT0 = 4
+    
+    ### Info for the fits form the ensembles files
+    if myEns == 'N451': from files_n451 import listTMaxSingleHads, listTMaxMultiHads, name, name1
+    elif myEns == 'N201': from files_n201 import listTMaxSingleHads, listTMaxMultiHads, name, name1 
+    elif myEns == 'D200': from files_d200 import listTMaxSingleHads, listTMaxMultiHads, name, name1
+    elif myEns == 'X451': from files_x451 import listTMaxSingleHads, listTMaxMultiHads, name, name1
+    
+    myLocation = vf.DIRECTORY_EXISTS(os.path.expanduser('~')+'/Documents/Chris Files/CorrelatorData/%s/'%myEns)
+    
+    if myRebinOn=='rb':
+        reBin ='_bin'+str(myRb)
+    else:
+        reBin=''  
+    
+    ### Just printing some info
+    vf.INFO_PRINTING(myWhichCorrelator, myEns)
+    
+    
+    if myWhichCorrelator=='s':
+        myIrreps = name1
+        
+        myData = h5py.File(myLocation + 'Single_correlators_' + myTypeRs + reBin + '_v%s.h5'%myVersion, 'r') 
+        
+        myFitsLocation = vf.DIRECTORY_EXISTS(myLocation + 'Fits_SingleHadrons/')
+        
+        myFitData = h5py.File(myFitsLocation + 'Single_correlators_' + myTypeRs + reBin + '_fits_v%s.h5'%myVersion, 'a')
+        
+        FitSingleCorrelators(myData, myFitData, myTypeRs, listTMaxSingleHads, myIrreps, one_tmin = myOneTMin, type_fit = myTypeFit, type_correlation = myTypeCorrelation)
+
+        
+    elif myWhichCorrelator=='m':
+        myIrreps = name
+        
+        myOperatorAnalysisMethod = 'from_list' # 'adding' # 'removing' # 'from_list'
+        
+        myData = h5py.File(myLocation + '/Matrix_correlators_' +  myTypeRs + reBin + '_v%s.h5'%myVersion,'r')
+        
+        myFitsLocation = vf.DIRECTORY_EXISTS(myLocation + 'Fits_Matrices/')
+        
+        myFitData = h5py.File(myFitsLocation + 'Matrix_correlators_' + myTypeRs + reBin + '_fits_v%s.h5'%myVersion, 'a')
+        
+        FitMultiCorrelators(myData, myFitData, myTypeRs, listTMaxMultiHads, myIrreps,  type_fit = myTypeFit, type_correlation = myTypeCorrelation, one_tmin = myOneTMin, one_t0 = myOneT0, chosen_t0 = myT0, gevp=True, operators_analysis = False, the_operator_analysis_method = myOperatorAnalysisMethod)
+     
+    elif myWhichCorrelator=='mr':
+        myData = h5py.File(myLocation + '/Matrix_correlators_ratios_' + ratioStr + myTypeRs + reBin + '_v%s.h5'%myVersion,'r')
+        myFitsLocation = vf.DIRECTORY_EXISTS(myLocation + 'Fits_Ratios/')
+        myFitData = h5py.File(myFitsLocation + 'Matrix_correlators_ratios_' + ratioStr + myTypeRs + reBin + '_fits_v%s.h5'%myVersion, 'a')
+        
+        FitMultiCorrelators(myData, myFitData, myTypeRs, listTMaxMultiHads, type_fit = myTypeFit, type_correlation = myTypeCorrelation, one_tmin = myOneTMin, one_t0 = myOneT0, chosen_t0 = myT0, ratio_on='yes')
+
+    myFitData.close()
+    myData.close()
