@@ -55,7 +55,8 @@ def SingleCorrelatorEffectiveMass(the_single_correlator_data, the_type_rs,**kwar
         print(f'Irrep nr.: {j+1} out of {len(the_list_name_irreps)}')
     end_time = time.time()
     print(f'TOTAL TIME TAKEN: {(end_time-begin_time)/60} mins')
-            
+
+
             
 def MultiCorrelatorEffectiveMass(the_matrix_correlator_data, the_type_rs, **kwargs):
     

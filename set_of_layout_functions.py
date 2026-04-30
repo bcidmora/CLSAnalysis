@@ -43,6 +43,14 @@ class DispRuns:
     
 
 @dataclass
+class NrIrreps:
+    first_irrep : int
+    last_irrep: int
+    steps: Optional[int]
+    nr_irreps : int
+    
+
+@dataclass
 class Runs:
     ensemble: str
     correlator: str
@@ -73,6 +81,8 @@ class Runs:
     dist_eff_mass: int
     diag_corr: bool
     
+    the_irreps: NrIrreps
+    
 import argparse
 ### Comments:
 # this function allows you to put all inputs in the terminal as variables. Easier for the amount of variables we have
@@ -85,7 +95,7 @@ def parse_args():
     parser.add_argument("-rs", "--rs-type", required=True, choices=["jk", "bt"]) # resampling schemes    
 
     ### These are optional
-    parser.add_argument("-is", "--isospin", default=None, choices=["s", "d", "t", "q"]) # isosinglet, isodoublet, isotriplet, isoquartet
+    parser.add_argument("-i", "--isospin", default=None, choices=["s", "d", "t", "q"]) # isosinglet, isodoublet, isotriplet, isoquartet
     
     ### Binning info
     parser.add_argument("--rebin", action="store_true")
@@ -118,6 +128,11 @@ def parse_args():
     
     ### These is for the Bootstrap
     parser.add_argument("-kbt", "--k-bootstrap", type=int, default=500) # resampling schemes
+    
+    ### How many Irreps to do
+    parser.add_argument("-fi", "--start-irrep", type=int)
+    parser.add_argument("-li","--last-irrep", type=int)
+    parser.add_argument("-ir","--nr-irreps", type=int)
 
     return parser.parse_args()
 
@@ -141,7 +156,7 @@ def VALIDATE_RUNS(r: Runs):
         raise ValueError("Fits require --fit-type")
     
     if r.correlator in ("m", "mr") and r.isospin is None:
-         raise ValueError("Isospin -is or --isospin is required for multi-hadron or ratio analysis")
+         raise ValueError("Isospin -i or --isospin is required for multi-hadron or ratio analysis")
 
 ### Comments:
 # This routine selects which runs to do, for example the corrs, the effective masses, etc.
@@ -155,6 +170,8 @@ def WhichRuns(args, the_ensemble_data):
     kbt = args.k_bootstrap if args.rs_type == "bt" else 500
     diag_corr = args.diag_corr
     dist_eff_mass = args.dist_eff_mass
+    
+    the_irreps = NrIrreps(first_irrep = args.start_irrep if args.start_irrep else None, last_irrep = args.last_irrep if args.last_irrep else None, nr_irreps =  args.nr_irreps if args.nr_irreps else None, steps = 1)
 
     return Runs(
         ensemble=args.ensemble.upper(),
@@ -179,9 +196,12 @@ def WhichRuns(args, the_ensemble_data):
         binning_run=bin_run,
         disp_run=disp_run,
         ops_run=ops_run,
+        
         kbt =kbt, 
         diag_corr = diag_corr,
         dist_eff_mass = dist_eff_mass,
+        
+        the_irreps = the_irreps,
         )
     
 ## Comments:

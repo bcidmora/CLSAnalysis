@@ -4,7 +4,6 @@ import time
 from iminuit import Minuit
 import sys
 import os
-# import set_of_functions as vf
 import set_of_analysis_functions as vfa
 import set_of_layout_functions as vfl
 

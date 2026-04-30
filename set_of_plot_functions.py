@@ -405,7 +405,7 @@ class IrrepInfo:
         self.Name = self.name[1]
         self.NamePlot = PLOT_HADRON_LABELINGS(self.Name)
         self.Momentum = self.name[0][-1]
-        self.Hadron = self.name[2]
+        self.Hadron = self.name[-1]
         self.HadronIsospin = OPERATORS_SH_ISOSPIN(self.Hadron)
         # self.TotalMomPlot = self.name[0][0]+ r'$^{2}=%s$'%self.name[0][-1]
         # self.TotalMomPlot = r'$\vec{\mathbf{d}}^{2}=%s$'%self.name[0]

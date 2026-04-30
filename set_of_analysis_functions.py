@@ -1280,9 +1280,8 @@ def SINGLE_EXPONENTIAL(x,e0,*a):
 # x: is the t_slices
 # e0: is a list (amplitud, energy E0, Amplitude shift of energy, DeltaE**2)
 # *a: this is a variable size arguments, in thie case corresponds to t0.
-def DOUBLE_EXPONENTIAL(x, e0, *a):
+def DOUBLE_EXPONENTIAL_ALTERNATIVE(x, e0, *a):
     return e0[0] * np.exp(-(x - a) * e0[1]) * (1. + e0[2] * np.exp(-x * (e0[3] - e0[1])))
-
 
 
 # Comments:
@@ -1299,9 +1298,23 @@ def GEOMETRIC_FORM(x,e0,*a):
 # x: is the t_slices
 # e0: is a list (amplitud, energy E0, Amplitude shift of energy, DeltaE**2)
 # *a: this is a variable size arguments, in thie case corresponds to t0.
-def DOUBLE_EXPONENTIAL_ALTERNATIVE(x, e0, *a):
+def DOUBLE_EXPONENTIAL(x, e0, *a):
     return e0[0] * np.exp(-(x - a) * e0[1]) * (1. + e0[2] * np.exp(-x * (e0[3] ** 2)))
 
+
+def DOUBLE_EXPONENTIAL_IB(x, p,*a):
+    # a0, e0, r, de = p
+    return p[0] * np.exp(-p[1] * x) * (1.0 + p[2] * np.exp(-p[3] * x))
+
+
+def DOUBLE_EXP_CORRECTIONS_IB(x, p, *a):
+    # a0, e0, r, de, da0, de0, dr, dde = p
+    the_base = np.exp(-p[1] * x)
+    return ((p[4] - p[0] * p[5] * x) * the_base * (1.0 + p[2] * np.exp(-p[3] * x)) + p[0] * the_base * (p[6] - p[2] * p[7] * x) * np.exp(-p[3] * x))
+
+
+def SINGLE_EXP_CORRECTIONS_IB(x,e0,*a): 
+    return (e0[2] - e0[0] * e0[3] * x) * np.exp((-e0[1]) * (x - a))
 
 ### Comments:
 # This function tries to find a good guess for the fit to have a prior, so it would in principle take less time. It uses a simple polynomial fit of order 1. 
