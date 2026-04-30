@@ -168,6 +168,216 @@ def FitSingleCorrelators(the_data, the_fit_data, the_type_rs, the_list_tmaxs, th
         print(f'Minimization {the_string_fit}: DONE!')
         end_time = time.time()        
         print(f'Time taken: {round((end_time-begin_time)/60,2)} min')
+
+def FitSingleCorrelatorsIB(the_data, the_fit_data, the_type_rs, the_list_tmaxs, the_irreps, **kwargs): 
+    
+    the_fit_map_ib = {'1': {"iso": {"n_params": 2, "model": vfa.SINGLE_EXPONENTIAL, "params": ('a0', 'e0'), "label": "Single Exponential Fit"},
+                            "ib": {"n_params": 4, "model": vfa.SINGLE_EXP_CORRECTIONS_IB, "params": ('a0', 'e0', 'a1', 'e1')}},
+                      '2': {"iso": {"n_params": 4, "model": vfa.DOUBLE_EXPONENTIAL_IB, "params": ('a0', 'e0', 'r', 'de'), "label": "Double Exponential Fit"},
+                            "ib": {"n_params": 8, "model": vfa.DOUBLE_EXP_CORRECTIONS_IB, "params": ('a0', 'e0', 'r', 'de', 'da0', 'de0', 'dr', 'dde')}}}    
+    ### The type of fit
+    the_fit_key = kwargs.get('type_fit')
+    the_type_fit = the_fit_map_ib[the_fit_key]
+    
+    ### Now separting the fit forms into the isoQCD and the IB corrections
+    the_iso = the_type_fit['iso']
+    the_ib = the_type_fit['ib']
+    
+    the_n_params_iso = the_iso["n_params"]
+    da_minimization_iso = the_iso["model"]
+    the_fit_params_iso = the_iso["params"]
+    the_string_fit_iso = the_iso.get("label", "")
+    
+    the_n_params_ib = the_ib["n_params"]
+    da_minimization_ib = the_ib["model"]
+    the_fit_params_ib = the_ib["params"]
+
+    print(f"                     FITTING: {the_string_fit_iso}\n")
+    
+    ### Correlated or uncorrelated
+    type_correlated_fit = kwargs.get('type_correlation')
+    
+    ### The name of the irreps
+    the_s_irreps = list(the_data.keys())
+    
+    ### Storing all the correlators before entering the loop
+    the_corr_cache = {key: np.asarray(the_data[f'{key}/Correlators/Real/Mean'], dtype=np.float64) for key in the_s_irreps}
+
+    the_corr_rs_cache = {key: vfa.NT_TO_NCFGS(np.asarray(the_data[f'{key}/Correlators/Real/Resampled'], dtype=np.float64)) for key in the_s_irreps}
+    
+    the_iso_irrep = the_s_irreps[0]
+    the_iso_corr = the_corr_cache[the_iso_irrep]
+    the_iso_corr_rs = the_corr_rs_cache[the_iso_irrep]
+    
+    iso_params_store = {}
+    
+    for irrep_idx, the_irrep in enumerate(the_s_irreps):
+        
+        is_iso = (irrep_idx == 0)
+
+        ### List of operators of this irrep
+        the_op_list = list(the_data[f'{the_irrep}/Operators'])
+        
+        print('----------------------------------------------------------------------------------------')
+        print(f'IRREP ({irrep_idx+1}/{len(the_s_irreps)}): {the_irrep}\n   --->>   Operators list: ')
+        for item in the_op_list:
+            print(f'           {item.decode("utf-8")}')
+        print('----------------------------------------------------------------------------------------')
+        
+        ### Check if this part already exists
+        dis_irrep = the_fit_data.require_group(the_irrep)
+
+        if 'Operators' not in dis_irrep:
+            dis_irrep.create_dataset('Operators', data=the_op_list)
+        
+        fit_group = dis_irrep.require_group(f'{the_fit_key}exp')
+        the_tmin_data = fit_group.require_group('Tmin')
+
+        ### Now let's look at the correlators        
+        the_corr_fit = the_corr_cache[the_irrep]
+        the_corr_fit_rs = the_corr_rs_cache[the_irrep]
+        
+        the_cov_matrix = np.asarray(the_data[f'{the_irrep}/Correlators/Real/Covariance_matrix'], dtype=np.float64)
+        the_nt = np.asarray(the_data[f'{the_irrep}/Time_slices'])
+        the_eff_energy_hint = np.asarray(the_data[f'{the_irrep}/Effective_masses/Mean'])
+        
+        ### Checking is the isosymmetric or the ib part. If ib, then it avoids the division by zero.
+        if not is_iso:
+            the_mask = np.abs(the_iso_corr) > 1e-14
+            the_mask_rs = np.abs(the_iso_corr_rs) > 1e-14
+            the_corr_fit = np.divide(the_corr_fit, the_iso_corr, out=np.zeros_like(the_corr_fit), where=the_mask)
+            the_corr_fit_rs = np.divide(the_corr_fit_rs, the_iso_corr_rs, out=np.zeros_like(the_corr_fit_rs), where=the_mask_rs)
+        
+        ### Checking the tmin and tmax variables
+        the_ul = int(the_list_tmaxs[irrep_idx]) - the_nt[0]
+        the_ll = np.arange(0, int(the_ul * 0.85))
+    
+        if type_correlated_fit == 'Correlated':
+            the_cov_matrix_fit = the_cov_matrix
+            if 'Correlated' in the_tmin_data:
+                del the_tmin_data['Correlated']
+            the_fit_data_group = the_tmin_data.create_group('Correlated')
+        elif type_correlated_fit == 'Uncorrelated':
+            the_cov_matrix_fit = np.diag(np.diag(the_cov_matrix))
+            if 'Uncorrelated' in the_tmin_data:
+                del the_tmin_data['Uncorrelated']
+            the_fit_data_group = the_tmin_data.create_group('Uncorrelated')
+        else:
+            raise ValueError("Invalid fit type")
+    
+        the_results = {'the_energies': [], 'the_sigmas': [], 'the_chi_vals': [], 'the_sigmas_chi': [], 'the_resampled': []}
+        
+        begin_time = time.time()
+        for the_yy in the_ll:
+            print(f'Tmin = {the_yy + the_nt[0]} || TMax = {the_ul + the_nt[0]}')
+            
+            the_nt_slice = the_nt[the_yy:the_ul]
+            the_corr_fit_slice = the_corr_fit[the_yy:the_ul]
+            
+            the_small_cov = vfa.SHRINK_MATRIX(the_cov_matrix_fit, the_yy, the_ul)   
+            the_inverse_cov_m = np.linalg.inv(the_small_cov)
+            
+            if is_iso:
+                da_hint = vfa.BEST_GUESS(the_corr_fit_slice, the_nt_slice, the_fit_key)
+                if np.any(np.isnan(da_hint)):
+                    the_dof = np.zeros(the_n_params_iso)
+                    the_dof[0] = 0.1
+                    the_dof[1] = the_eff_energy_hint[the_yy]
+                else:
+                    the_dof = da_hint.copy()
+
+                the_fit_choice = vfa.My_Fits(da_minimization_iso, the_nt_slice, the_corr_fit_slice, the_inverse_cov_m, the_dof, np.float64(0.))
+                the_fit = Minuit(the_fit_choice, the_dof, name=the_fit_params_iso)
+
+                the_fit.errordef = 1e-8
+                the_fit.tol = 1e-10
+                the_fit.scan()
+                the_fit.migrad(iterate=10, ncall=5000)
+
+                iso_params = the_fit.values.to_dict()
+                iso_params_store[the_yy] = iso_params
+                
+                e0 = np.double(iso_params['e0'])
+                chi_val = the_fit.fval
+                dof_rs_base = np.array([iso_params.get(p, 0.0) for p in the_fit_params_iso])
+            
+            else:
+                iso_params = iso_params_store[the_yy]
+                the_dof = np.zeros(the_n_params_ib)
+            
+                for the_name in the_fit_params_iso:
+                    idx = the_fit_params_ib.index(the_name)
+                    the_dof[idx] = iso_params[the_name]
+
+                the_fit_choice = vfa.My_Fits(da_minimization_ib, the_nt_slice, the_corr_fit_slice, the_inverse_cov_m, the_dof, np.float64(0.))                
+                the_fit = Minuit(the_fit_choice, the_dof, name=the_fit_params_ib)
+                
+                for the_name in the_fit_params_iso:
+                    the_fit.fixed[the_name] = True
+
+                the_fit.errordef = 1e-8
+                the_fit.tol = 1e-10
+                the_fit.scan()
+                the_fit.migrad(iterate=10, ncall=5000)
+                
+                chi_val = the_fit.fval
+                
+                if the_fit_key == '1':
+                    e0 = np.double(the_fit.values['e1']) 
+                else:
+                    e0 = np.double(the_fit.values['de0'])
+                dof_rs_base = the_dof.copy()
+            
+            n_rs = the_corr_fit_rs.shape[0]
+            resampled_vals = np.empty(n_rs + 1)
+            resampled_vals[0] = e0
+            chi_vals_rs = np.full(n_rs, np.nan)
+            
+            the_model = da_minimization_iso if is_iso else da_minimization_ib
+            the_params = the_fit_params_iso if is_iso else the_fit_params_ib
+
+            for zz in range(n_rs):
+                
+                corr_rs_slice = the_corr_fit_rs[zz, the_yy:the_ul]
+                dof_rs = dof_rs_base.copy()
+
+                the_fit_rs = Minuit(vfa.My_Fits(the_model, the_nt_slice, corr_rs_slice, the_inverse_cov_m, dof_rs, np.float64(0.)), dof_rs, name=the_params)
+
+                if not is_iso:
+                    for the_name in the_fit_params_iso:
+                        the_fit_rs.fixed[the_name] = True
+    
+                the_fit_rs.errordef = 1e-8
+                the_fit_rs.tol = 1e-7
+                the_fit_rs.scan()
+                the_fit_rs.migrad(iterate=10, ncall=5000)
+                
+                chi_vals_rs[zz] = the_fit_rs.fval
+
+                if is_iso:
+                    val = np.double(the_fit_rs.values['e0'])
+                else:
+                    val = np.double(the_fit_rs.values['e1'] if the_fit_key == '1' else the_fit_rs.values['de0'])
+
+                resampled_vals[zz + 1] = val
+
+            rs_vals = resampled_vals[1:]
+            
+            the_results['the_energies'].append(e0)
+            the_results['the_chi_vals'].append(chi_val)
+            the_results['the_sigmas'].append(vfa.STD_DEV(rs_vals, np.mean(rs_vals), the_type_rs))
+            the_results['the_sigmas_chi'].append(vfa.STD_DEV(chi_vals_rs, np.mean(chi_vals_rs), the_type_rs))
+            the_results['the_resampled'].append(resampled_vals)
+
+        the_results['the_resampled'] = np.array(the_results['the_resampled'])
+        
+        the_fit_data_group.create_dataset('Resampled', data = the_results['the_resampled'])
+        
+        the_fit_data_group.create_dataset('Mean', data = np.array([the_ll + the_nt[0], [the_ul + the_nt[0]]*(len(the_ll)), the_results['the_energies'], the_results['the_sigmas'], the_results['the_chi_vals'], the_results['the_sigmas_chi']]))
+
+        print(f'Minimization {the_string_fit}: DONE!')
+        end_time = time.time()        
+        print(f'Time taken: {round((end_time-begin_time)/60,2)} min')
     
     
 def FitMultiCorrelators(the_data, the_fit_data, the_type_rs, the_list_tmaxs, the_irreps, **kwargs):
@@ -197,6 +407,12 @@ def FitMultiCorrelators(the_data, the_fit_data, the_type_rs, the_list_tmaxs, the
         the_t0_s = [int(kwargs.get('chosen_t0'))]
     else:
         the_t0_s = sorted([int(item[3:]) for item in list(the_data[f'{the_m_irreps[0]}/GEVP'])])
+    
+    ### Type of fit for the procedure. 
+    the_fit_map = {
+        '1': (2, vfa.SINGLE_EXPONENTIAL, ('a0', 'e0'), "Single Exponential Fit"),
+        '2': (4, vfa.DOUBLE_EXPONENTIAL, ('a0', 'e0', 'a1','e1'), "Double Exponential Fit"),
+        'g': (4, vfa.GEOMETRIC_FORM, ('a0', 'e0', 'b','m'), "Geometric series Fit" ),}
     
     try:
         the_n_params, da_minimization, the_fit_params, the_string_fit = the_fit_map[the_type_fit]

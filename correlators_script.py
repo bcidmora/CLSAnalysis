@@ -501,6 +501,8 @@ if __name__== "__main__":
     
     import ensembles as ed
     
+    isoBreaking = False
+    
     ### The ensemble
     myEns = str(sys.argv[1]).upper()
     
@@ -534,7 +536,7 @@ if __name__== "__main__":
         reBin = ''
         
     ### Information from the ensembles dictionary
-    myLocation = vfl.DIRECTORY_EXISTS(f'{ed.outputLocation}{myEns}/')
+    myLocation = vfl.DIRECTORY_EXISTS(f'{ed.location}/CorrelatorData/{myEns}/')
 
     myCnfgs = ed.ensembles[myEns]['ncfgs'] # None # 20 # 100
     myWeight = vfa.REWEIGHTS(ed.ensembles[myEns]['weight_raw'], myCnfgs)
@@ -552,8 +554,12 @@ if __name__== "__main__":
         ### Name of the output file
         myVersion =  f'_{myEns}_singles_test' 
         
-        myArchivo = h5py.File(ed.ensembles[myEns]['fs'], 'r')
-        myIrreps = list(myArchivo.keys())
+        if isoBreaking:
+            myArchivo = h5py.File(ed.ensembles[myEns]['ib']['fs'], 'r')
+            myIrreps = list(myArchivo.keys())
+        else:
+            myArchivo = h5py.File(ed.ensembles[myEns]['fs'], 'r')
+            myIrreps = list(myArchivo.keys())
         
         savedLocation = SingleCorrelatorAnalysis(myArchivo, myLocation, myVersion, myTypeRs, myIrreps, myWeight, rebin_on = myRebinOn, rb = myRb, kbt = myKbt, number_cfgs = myCnfgs, nr_irreps=myNrIrreps, own_kbt_list = myKbtSamples, first_irrep = myFirstIrrep , last_irrep = myLastIrrep)
         
@@ -561,7 +567,8 @@ if __name__== "__main__":
     
     elif myWhichCorrelator=='m':
         ### Name of the output file
-        myVersion =  f'_{myEns}_{myChosenIsospin}_test' 
+        myVersion =  f'_{myEns}_{myChosenIsospin}_test'
+        
         myArchivo = h5py.File(ed.ensembles[myEns][myIsospin]['fm'], 'r')
         myIrreps = list(myArchivo.keys())
         

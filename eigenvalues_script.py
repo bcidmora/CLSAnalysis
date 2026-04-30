@@ -96,7 +96,6 @@ def EigenvaluesExtraction(the_matrix_correlator_data, the_type_rs, the_irreps, t
 
 
 if __name__=="__main__":
-    import ensembles as ed
     
     ### Ensemble you want to analyse
     myEns = str(sys.argv[1]).upper()
@@ -110,35 +109,41 @@ if __name__=="__main__":
     
     ### How the eigenstates are sorted
     mySorting = 'eigenvals' #'eigenvals' # 'vecs_fix' # 'vecs_fix_norm' # 'vecs_var' # 'vecs_var_norm'
-    myRsSorting = None # mySorting # None
-    myTD = None
-    
-    ### Root Location of your hdf5 file that contains the correlators already resampled and averaged.
-    myLocation = vfl.DIRECTORY_EXISTS(f'{ed.outputLocation}{myEns}/')
-    
-    ### Rebin naming
-    if myRebinOn=='rb': 
-        reBin = f'_bin{myRb}'
-    else: 
-        reBin = ''
     
     ### Name of this version of analysis
-    myVersion =  f'_{myEns}_{myChosenIsospin}_test' 
+    myVersion = 'test'
     
     ### Min and Max t0 to do the GEVP
     myT0Min = int(input('T0 min: '))
-    myT0Max = int(input('T0 max: '))     
+    myT0Max = int(input('T0 max: ')) 
     
-    myArchivo = h5py.File(ed.ensembles[myEns][myIsospin]['fm'], 'r')
-    myIrreps = list(myArchivo.keys())
-    myArchivo.close()
+    ### Root Location of your hdf5 file that contains the correlators already resampled and averaged.
+    myLocation = os.path.expanduser('~')+'/Documents/Chris Files/CorrelatorData/%s/'%myEns
+    
+    ### Rebin naming
+    if myRebinOn=='rb': 
+        rb = int(myRb)
+        reBin = '_bin'+str(rb)
+    else:
+        reBin = ''  
+    
+    if myEns == 'N451': from files_n451 import name
+    elif myEns == 'N201': from files_n201 import name 
+    elif myEns == 'D200': from files_d200 import name
+    elif myEns == 'X451': from files_x451 import name
+    
+    import ensembles as ed
+    
+    myIrreps = name
     
     ### This is the file that cotains the averaged correlators and stuff
-    myArchivo = f'{myLocation}Matrix_correlators_{myTypeRs}{reBin}_v{myVersion}.h5'
+    # myArchivo = myLocation + 'Matrix_correlators_' + myTypeRs + reBin + '_v%s.h5'%myVersion
+    myArchivo = myLocation + 'Matrix_correlators_bt_bin10_v8_old_oficial_new_gevp.h5'
     
     myMatrixCorrelatorData = h5py.File(myArchivo,'r+')
     
-    EigenvaluesExtraction(myMatrixCorrelatorData, myTypeRs, myIrreps, myT0Min, myT0Max, sorting=mySorting, the_td = myTD, rs_sorting = myRsSorting)
+    EigenvaluesExtraction(myMatrixCorrelatorData, myTypeRs, myIrreps, t0_min = myT0Min, t0_max = myT0Max, sorting=mySorting)
+    # EigenvaluesExtraction(myCorrelator, myTypeRs, myIrreps, t0_min = myT0Min, t0_max = myT0Max, sorting=mySorting,the_td=myTD)
     myMatrixCorrelatorData.close()   
     
     print('-'*(len(myArchivo)+1))

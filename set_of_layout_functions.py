@@ -80,6 +80,7 @@ class Runs:
     kbt: int 
     dist_eff_mass: int
     diag_corr: bool
+    ib_corr: bool
     
     the_irreps: NrIrreps
     
@@ -110,6 +111,7 @@ def parse_args():
     parser.add_argument("--corrdiff", action="store_true") # Correlated differences
     parser.add_argument("--ops", action="store_true") # Operator analysis
     parser.add_argument("--binning", action="store_true") # Binning analysis
+    parser.add_argument("--ib-corr", action="store_true") # including ib corrections
     
     ### These are for the GEVP and ops analysis
     parser.add_argument("--t0min", type=int)
@@ -170,6 +172,7 @@ def WhichRuns(args, the_ensemble_data):
     kbt = args.k_bootstrap if args.rs_type == "bt" else 500
     diag_corr = args.diag_corr
     dist_eff_mass = args.dist_eff_mass
+    ib_corr = args.ib_corr
     
     the_irreps = NrIrreps(first_irrep = args.start_irrep if args.start_irrep else None, last_irrep = args.last_irrep if args.last_irrep else None, nr_irreps =  args.nr_irreps if args.nr_irreps else None, steps = 1)
 
@@ -202,6 +205,7 @@ def WhichRuns(args, the_ensemble_data):
         dist_eff_mass = dist_eff_mass,
         
         the_irreps = the_irreps,
+        ib_corr = ib_corr,
         )
     
 ## Comments:

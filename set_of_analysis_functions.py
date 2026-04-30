@@ -1124,24 +1124,47 @@ def REWEIGHTED_CORR(da_corr, rw):
 
 # rw: list of reweighting factors [Ncfgs]
 # it returns a list with the normalized reweighting factors
-def REWEIGHTS(the_rw_list, the_nfs):
-    if len(the_rw_list)==1:
-        if 'dat_ascii' in the_rw_list[0]:
-            the_weight = np.asarray(np.loadtxt(the_rw_list[0], unpack=True)[1])
-        elif 'rw.dat' in the_rw_list[0]:
-            the_pre_weight = np.asarray(np.loadtxt(the_rw_list[0], unpack=True))
-            the_weight = np.asarray([the_pre_weight[1][jj] * the_pre_weight[2][jj] for jj in range(len(the_pre_weight[0]))])
-        else:
-            print('Error: Please check name reweighting factors file.')
-    else:
-        if 'r000' in the_rw_list[0] and 'r001' in the_rw_list[1]:
-            the_weight = np.concatenate((np.loadtxt(the_rw_list[0], unpack=True)[1], np.loadtxt(the_rw_list[1], unpack=True)[1]), axis=0)
-        else:
-            the_pre_weight_1 = np.asarray(np.loadtxt(the_rw_list[0], unpack=True)[1])
-            the_pre_weight_2 = np.asarray(np.loadtxt(the_rw_list[1], unpack=True)[1])
-            the_weight = np.asarray([the_pre_weight_1[jj] * the_pre_weight_2[jj] for jj in range(len(the_pre_weight_1))])
-    return RW_NORMALIZATION(the_weight, the_nfs)
+# def REWEIGHTS(the_rw_list, the_nfs):
+#     if len(the_rw_list)==1:
+#         if 'dat_ascii' in the_rw_list[0]:
+#             the_weight = np.asarray(np.loadtxt(the_rw_list[0], unpack=True)[1])
+#         elif 'rw.dat' in the_rw_list[0]:
+#             the_pre_weight = np.asarray(np.loadtxt(the_rw_list[0], unpack=True))
+#             the_weight = np.asarray([the_pre_weight[1][jj] * the_pre_weight[2][jj] for jj in range(len(the_pre_weight[0]))])
+#         else:
+#             print('Error: Please check name reweighting factors file.')
+#     else:
+#         if 'r000' in the_rw_list[0] and 'r001' in the_rw_list[1]:
+#             the_weight = np.concatenate((np.loadtxt(the_rw_list[0], unpack=True)[1], np.loadtxt(the_rw_list[1], unpack=True)[1]), axis=0)
+#         else:
+#             the_pre_weight_1 = np.asarray(np.loadtxt(the_rw_list[0], unpack=True)[1])
+#             the_pre_weight_2 = np.asarray(np.loadtxt(the_rw_list[1], unpack=True)[1])
+#             the_weight = np.asarray([the_pre_weight_1[jj] * the_pre_weight_2[jj] for jj in range(len(the_pre_weight_1))])
+#     return RW_NORMALIZATION(the_weight, the_nfs)
 
+
+def REWEIGHTS(the_rw_list, the_nfs):
+    def process_file(the_file):
+        data = np.loadtxt(the_file, unpack=True)
+        if data.ndim == 1:
+            return data
+        ncols = data.shape[0]
+        if ncols == 1:
+            return data[0]
+        elif ncols == 2:
+            return data[1]
+        elif ncols == 3:
+            return data[1] * data[2]
+        elif ncols == 4:
+            return data[3]
+        else:
+            raise ValueError(f"Unsupported column structure in {the_file}: {ncols} columns")
+    processed = [process_file(f) for f in the_rw_list]
+    if len(processed) == 1:
+        the_weight = processed[0]
+    else:
+        the_weight = np.concatenate(processed, axis=0)
+    return RW_NORMALIZATION(the_weight, the_nfs)
 
 
 ### ------------- RESAMPLING ------------------------------------------------------

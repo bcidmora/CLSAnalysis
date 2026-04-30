@@ -3,7 +3,7 @@ import h5py
 import os
 
 location = os.path.expanduser("~")+"/Documents/Chris Files" # Path to your main folder
-outputLocation = f"{location}/CorrelatorData/"
+outputLocation = os.path.expanduser("~")+"/Documents/Chris Files/CorrelatorData/"
 
 fmToMev = np.float64(197.327)
 
@@ -25,6 +25,9 @@ ens_a654 = {
     'fs' : f'{location}/data/A654/cls21_A654_r000_singles.hdf5',
     'singleTMaxFits' : [15, 15, 15],
     'singleTMinResults' :  [30, 30, 30],
+    'ib': {'fs': f'{location}/data/A654/cls21_A654_r000_isosinglet_Sm3.hdf5',
+            'singleTMaxFits' : [15, 15, 15],
+            'singleTMinResults' :  [30, 30, 30],},
     's' : { 'iso_name' : iso_map['s'][0],
             'iso_tag' : iso_map['s'][1],
             'iso_label' : iso_map['s'][2],
@@ -32,7 +35,7 @@ ens_a654 = {
             'multiTMaxFits' : [[]],
             'multiTMinResults' : [[]],
             'nonInteractingLevels' : [ []],
-            'operatorsChoice': [[]],
+            'operatorRemovalChoice': [[]],
             },
     'd' : { 'iso_name' : iso_map['d'][0],
             'iso_tag' : iso_map['d'][1],
@@ -41,7 +44,7 @@ ens_a654 = {
             'multiTMaxFits' : [[]],
             'multiTMinResults' : [[]],
             'nonInteractingLevels' : [ []],
-            'operatorsChoice': [[]],
+            'operatorRemovalChoice': [[]],
             },
     't' : { 'iso_name' : iso_map['t'][0],
             'iso_tag' : iso_map['t'][1],
@@ -50,7 +53,7 @@ ens_a654 = {
             'multiTMaxFits' : [[]],
             'multiTMinResults' : [[]],
             'nonInteractingLevels' : [ []],
-            'operatorsChoice': [[]],
+            'operatorRemovalChoice': [[]],
             },
     'q' : { 'iso_name' : iso_map['q'][0],
             'iso_tag' : iso_map['q'][1],
@@ -59,7 +62,7 @@ ens_a654 = {
             'multiTMaxFits' : [[]],
             'multiTMinResults' : [[]],
             'nonInteractingLevels' : [ []],
-            'operatorsChoice': [[]],
+            'operatorRemovalChoice': [[]],
             },
     }
 
@@ -78,6 +81,9 @@ ens_d200 = {
                             8,10,8,8,10,8, # P^{2} = 2
                             8,10,10,8,10,8, # P^{2} = 3
                             8,8,8,8,10], # P^{2} = 4,
+    'ib': {'fs': f'{location}/data/D200/cls21_D200_r000_isosinglet_Sm3.hdf5',
+            'singleTMaxFits' : [15, 15, 15],
+            'singleTMinResults' :  [30, 30, 30],},
     's' : { 'iso_name' : iso_map['s'][0],
             'iso_tag' : iso_map['s'][1],
             'iso_label' : iso_map['s'][2],
@@ -109,7 +115,7 @@ ens_d200 = {
                                 ['P(1)S(2)', 'K(1)N(2)', 'P(2)S(1)','K(2)N(1)', 'P(0)S(3)'], # P3_F1
                                 ['P(1)S(2)', 'K(1)N(2)', 'P(2)S(1)','K(2)N(1)', 'P(0)S(3)'], # P3_F2
                                 ['K(0)N(3)', 'P(0)S(3)', 'K(1)N(2)', 'P(1)S(2)',  'K(2)N(1)', 'K(3)N(0)']], # P3_G
-            'operatorsChoice' : [[]],
+            'operatorRemovalChoice' : [[]],
             },
     'd' : { 'iso_name' : iso_map['d'][0],
             'iso_tag' : iso_map['d'][1],
@@ -138,7 +144,7 @@ ens_d200 = {
                             ['K(2)P(1)', 'K(1)P(2)'],  # PSQ3_E
                             ['K(1)P(1)', 'K(4)P(0)', 'K(2)P(2)', 'K(0)P(4)'], # PSQ4_A1
                             ['K(2)P(2)']], # PSQ4_E
-            'operatorsChoice' : [['PSQ0_T1u', '0011', '0001', '0010']],
+            'operatorRemovalChoice' : [['PSQ0_T1u', '0011', '0001', '0010']],
             },
     't' : { 'iso_name' : iso_map['t'][0],
             'iso_tag' : iso_map['t'][1],
@@ -155,7 +161,7 @@ ens_d200 = {
                             ['P(1)S(2)', 'K(1)N(2)', 'P(2)S(1)', 'K(2)N(1)', 'P(0)S(3)'],  # P3_F1
                             ['P(1)S(2)', 'K(1)N(2)', 'P(2)S(1)', 'K(2)N(1)', 'P(0)S(3)'],  # P3_F2
                             ['K(0)N(3)', 'P(0)S(3)', 'K(1)N(2)', 'P(1)S(2)', 'K(2)N(1)', 'K(3)N(0)']], # P3_G
-            'operatorsChoice' : [['PSQ0_T1u', '0011', '0001', '0010']],
+            'operatorRemovalChoice' : [['PSQ0_T1u', '0011', '0001', '0010']],
             },
     'q' : { 'iso_name' : iso_map['q'][0],
             'iso_tag' : iso_map['q'][1],
@@ -171,7 +177,7 @@ ens_d200 = {
                             ['P(1)S(2)', 'K(1)N(2)', 'P(2)S(1)', 'K(2)N(1)', 'P(0)S(3)'],  # P3_F1
                             ['P(1)S(2)', 'K(1)N(2)', 'P(2)S(1)', 'K(2)N(1)', 'P(0)S(3)'],  # P3_F2
                             ['K(0)N(3)', 'P(0)S(3)', 'K(1)N(2)', 'P(1)S(2)', 'K(2)N(1)', 'K(3)N(0)']], # P3_G
-            'operatorsChoice' : [[]],
+            'operatorRemovalChoice' : [[]],
                     },
     'threshold_masses' : {'E': 0.1768, 'K': 0.15630, 'P': 0.06502},
     'singleTMinResultsCorrDiff' : {'K' : [23, 23, 23, 23, 23],
@@ -190,10 +196,13 @@ ens_d450 = {
     'ncfgs' : 500,
     'allConfigs': True,
     'nfgsList': np.arange(0,500,1),
-    'weight_raw' : [f'{location}/data/D450/D450r010_rw.dat'], #NEEDS CHECKING
+    'weight_raw' : [f'{location}/data/D450/D450r010.ms1.txt'], #NEEDS CHECKING
     'fs' : f'{location}/data/D450/cls21_D450_r010_single_fwd.hdf5',
     'singleTMaxFits' : [],
     'singleTMinResults' : [], 
+    'ib': {'fs': f'{location}/data/D450/cls21_D450_r010_isosinglet_Sm3.hdf5',
+            'singleTMaxFits' : [15, 15, 15],
+            'singleTMinResults' :  [30, 30, 30],},
     's' : { 'iso_name' : iso_map['s'][0],
             'iso_tag' : iso_map['s'][1],
             'iso_label' : iso_map['s'][2],
@@ -243,6 +252,9 @@ ens_e250 = {
     'fs' : f'{location}/data/E250/cls21_e250_r001_S1_singles.h5',
     'singleTMaxFits': [37,37,37,37,37,37,28,31,28],
     'singleTMinResults': [17,25,25,24,18,18,18,17,19],
+    'ib' : {'fs' : f'{location}/data/E250/cls21_E250_r001_isosinglet_Sm3.h5',
+            'singleTMaxFits' : [],
+            'singleTMinResults' : [],},
     's' : { 'iso_name' : iso_map['s'][0],
             'iso_tag' : iso_map['s'][1],
             'iso_label' : iso_map['s'][2],
@@ -292,6 +304,9 @@ ens_n101 = {
     'fs' : f'{location}/data/N101/cls21_N101_r003_singles.hdf5',
     'singleTMaxFits' : [],
     'singleTMinResults' : [],
+    'ib' : {'fs' : f'{location}/data/N101/cls21_N101_r003_isosinglet_Sm3.hdf5',
+            'singleTMaxFits' : [30, 30, 30],
+            'singleTMinResults' : [15, 15, 15],},
     's' : { 'iso_name' : iso_map['s'][0],
             'iso_tag' : iso_map['s'][1],
             'iso_label' : iso_map['s'][2],
@@ -329,7 +344,7 @@ ens_n101 = {
             'operatorRemovalChoice' : [[]],
         },
     }
-    
+
 ens_n200 = {
     'aLat' : np.float64(0.06426), # in fm
     'betaLat' : np.float64(3.55),
@@ -339,8 +354,11 @@ ens_n200 = {
     'nfgsList': np.arange(0,1712,1),
     'weight_raw' : [f'{location}/data/N200/N200r000.ms1.dat_ascii', f'{location}/data/N200/N200r001.ms1.dat_ascii'],
     'fs' : f'{location}/data/N200/cls21_N200_r000_singles.hdf5',
-    'singleTMaxFits' : [30, 30, 30],
-    'singleTMinResults' : [15, 15, 15],
+    'singleTMaxFits' : [],
+    'singleTMinResults' : [],
+    'ib' : {'fs' : f'{location}/data/N200/cls21_N200_r000_isosinglet_Sm3.hdf5',
+            'singleTMaxFits' : [30, 30, 30],
+            'singleTMinResults' : [15, 15, 15],},
     's' : { 'iso_name' : iso_map['s'][0],
             'iso_tag' : iso_map['s'][1],
             'iso_label' : iso_map['s'][2],
@@ -348,7 +366,7 @@ ens_n200 = {
             'multiTMaxFits' : [[]],
             'multiTMinResults' : [[]],
             'nonInteractingLevels' : [ []],
-            'operatorsChoice' : [[]],
+            'operatorRemovalChoice' : [[]],
             },
     'd' : { 'iso_name' : iso_map['d'][0],
             'iso_tag' : iso_map['d'][1],
@@ -357,7 +375,7 @@ ens_n200 = {
             'multiTMaxFits' : [[]],
             'multiTMinResults' : [[]],
             'nonInteractingLevels': [[]], 
-            'operatorsChoice' : [[]],
+            'operatorRemovalChoice' : [[]],
             },
     't' : { 'iso_name' : iso_map['t'][0],
             'iso_tag' : iso_map['t'][1],
@@ -366,7 +384,7 @@ ens_n200 = {
             'multiTMaxFits': [[]],
             'multiTMinResults': [[]],
             'nonInteractingLevels': [[]], 
-            'operatorsChoice' : [[]],
+            'operatorRemovalChoice' : [[]],
         },
     'q' : { 'iso_name' : iso_map['q'][0],
             'iso_tag' : iso_map['q'][1],
@@ -375,7 +393,7 @@ ens_n200 = {
             'multiTMaxFits': [[]],
             'multiTMinResults': [[]],
             'nonInteractingLevels': [[]], 
-            'operatorsChoice' : [[]],
+            'operatorRemovalChoice' : [[]],
         },
     }
     
@@ -390,6 +408,9 @@ ens_n201 = {
     'fs' : f'{location}/data/N201/cls21_N201_r000_isotriplet_S0_singles_fwd.hdf5',
     'singleTMaxFits' : [],
     'singleTMinResults' : [],
+    'ib' : {'fs' : f'{location}/data/N201/cls21_N201_r000_singles_Sm3.hdf5',
+            'singleTMaxFits' : [30, 30, 30],
+            'singleTMinResults' : [15,15,15],},
     's' : { 'iso_name' : iso_map['s'][0],
             'iso_tag' : iso_map['s'][1],
             'iso_label' : iso_map['s'][2],
@@ -439,6 +460,9 @@ ens_n203 = {
     'fs' : f'{location}/data/N203/cls21_N203_r000_singles.hdf5',
     'singleTMaxFits' : [],
     'singleTMinResults' : [],
+    'ib' : {'fs' : f'{location}/data/N203/cls21_N203_r000_isosinglet_Sm3.hdf5',
+            'singleTMaxFits' : [],
+            'singleTMinResults' : [],},
     's' : { 'iso_name' : iso_map['s'][0],
             'iso_tag' : iso_map['s'][1],
             'iso_label' : iso_map['s'][2],
@@ -476,7 +500,7 @@ ens_n203 = {
             'operatorsChoice' : [[]]
         },
     }
-    
+
 
 ens_n451 = {
     'aLat' : np.float64(0.0749), # in fm
@@ -489,6 +513,9 @@ ens_n451 = {
     'fs' : f'{location}/data/N451/cls21_N451_r000_isotriplet_S0_singles_fwd.hdf5',
     'singleTMaxFits' : [],
     'singleTMinResults' : [],
+    'ib' : {'fs' : f'{location}/data/N451/cls21_N451_r000_isosinglet_Sm3.hdf5',
+            'singleTMaxFits' : [],
+            'singleTMinResults' : [],},
     's' : { 'iso_name' : iso_map['s'][0],
             'iso_tag' : iso_map['s'][1],
             'iso_label' : iso_map['s'][2],
@@ -530,7 +557,7 @@ ens_n451 = {
 ens_x451 = {
     'aLat' : np.float64(0.0633), # in fm
     'betaLat' : np.float64(3.55),
-    'LatSize' : np.float64(40.),
+    'LatSize' : np.float64(64.),
     'ncfgs' : 2026,
     'allConfigs': False,
     'nfgsList': np.sort(np.concatenate([np.arange(7,393,16),np.arange(175,895,16),np.arange(911,1903,16),np.arange(1919,1952,16)])),
@@ -542,6 +569,9 @@ ens_x451 = {
                        12,12,11,12,12,12, # P^{2} = 2
                        12,12,11,12,12,11, # P^{2} = 3
                        12,12,11,11], # P^{2} = 4,
+    'ib' : {'fs' : f'{location}/data/X451/cls21_X451_r001_isosinglet_Sm3.hdf5',
+            'singleTMaxFits' : [30,30,30],
+            'singleTMinResults' : [15,15,15],},
     's' : { 'iso_name' : iso_map['s'][0],
             'iso_tag' : iso_map['s'][1],
             'iso_label' : iso_map['s'][2],
