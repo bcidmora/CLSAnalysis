@@ -5,9 +5,9 @@ import h5py
 import time
 import os
 import sys
-import set_of_functions as vf
+import set_of_analysis_functions as vfa
 
-def OperatorsAnalysis(the_matrix_correlator_data, the_type_rs, the_operator_analysis_method, the_irreps, the_t0_min, the_t0_max, **kwargs):
+def OperatorsAnalysis(the_matrix_correlator_data, the_type_rs, the_irreps, the_t0_min, the_t0_max, the_location, the_chosen_op_list, **kwargs):
     
     print("                     OPERATORS ANALYSIS PROCESS \n")
     ### The list of total irreps
@@ -43,82 +43,70 @@ def OperatorsAnalysis(the_matrix_correlator_data, the_type_rs, the_operator_anal
     else:
         the_rs_sorting_process = the_sorting_process
         
-    ### If not all irreps are analysed, this number can be changed.
+    the_matrix_correlator_data_reduced = h5py.File(the_location,'w')    
     
-    the_operator_analysis_map = { 
-        'adding': {'method': vfa.ADD_ROWS_COLS, 'start': 1, 'end': -1, 'name': 'Add_', 'msg': "Adding operators to the correlation matrix one by one starting with a 2x2 matrix."},
-        'removing': {'method': vfa.REMOVE_ROWS_COLS, 'start': 0, 'end': 0, 'name': 'Remove_', 'msg': "Removing operators from the correlation matrix one at the time."},
-        'from_list': {'method': vfa.CHOOSE_OPS, 'start': None, 'end': None, 'name': "Ops_chosen_", 'OpList': kwargs.get('ops_analysis_list'), 'msg':  "Using a custom list of operators"},
-        }
-    
-    if the_operator_analysis_method not in the_operator_analysis_map:
-        raise ValueError(f"Unknown operator analysis method: {the_operator_analysis_method}")
-    
-    da_method = the_operator_analysis_map[the_operator_analysis_method]
-    
-    the_op_method = da_method['method']
-    the_start_op = da_method['start']
-    the_last_op = da_method['end']
-    the_name_method = da_method['name']
-    print(da_method['msg'])
-    
-    the_chosen_op_list = da_method.get('OpList')        
-        
     begin_time = time.time()
-    for the_irrep in the_m_irreps:
+    for jj, the_irrep in enumerate(the_m_irreps):
+        
+        print('\n----------------------------------------------')
+        print(f'     IRREP ({jj+1}/{len(the_irreps)}): {the_irrep}')
         
         ### The data to analyse. 
         this_data = the_matrix_correlator_data[the_irrep]
         
         ### The operators list and the time slices
-        the_op_list, the_nt = list(this_data.get('Operators')), np.array(this_data.get('Time_slices'))
+        the_op_list, the_nt = list(this_data['Operators']), np.asarray(this_data['Time_slices'])
         
-        if 'Operators_Analysis' not in this_data.keys(): 
-            the_group_rows_cols = this_data.create_group('Operators_Analysis')
-        else:
-            the_group_rows_cols = this_data.get('Operators_Analysis')
+        ### This is the original correlator
+        this_data_corr = this_data['Correlators/Real/']
         
-        this_data_corr = np.asarray(this_data['Correlators/Real/'])
+        if len(the_chosen_op_list[jj])>=1:
         
-         ### This is just reshaping the data to make it easier to analyse
-        the_mod_data = vfa.RESHAPING_CORRELATORS(this_data_corr['Mean'])
-        the_mod_data_rs = vfa.RESHAPING_CORRELATORS_RS_NT(this_data_corr['Resampled'])
-        
-        print('\n----------------------------------------------')
-        print(f'     IRREP ({the_irreps.index(the_irrep)+1}/{len(the_irreps)}): {the_irrep}')
-        
-        ### If you want to choose from a list, then you have to provide the list.
-        if the_operator_analysis_method == 'from_list':
-            the_chosen_op_list_j = the_chosen_op_list[the_irreps.index(the_irrep)]
+            the_mod_op_list = [the_op_list[the_item] for the_item in the_chosen_op_list[jj]]
+
+            the_mod_data = this_data_corr['Mean'][:, the_chosen_op_list[jj]][:, :,  the_chosen_op_list[jj]]            
             
-            if not the_chosen_op_list_j or len(the_chosen_op_list_j) == len(the_op_list):
-                continue
-
-            the_selections = [(the_chosen_op_list_j, the_name_ops_analysis + ''.join(map(str, the_chosen_op_list_j)))]
-            the_ops_chosen_string = f"{the_name_ops_analysis}{'-'.join(map(str, sorted(the_chosen_op_list_j)))}"
-        else:
-            the_indices = np.arange(the_start_op, len(the_op_list) + the_last_op)            
-            the_selections = [(ii, f"{the_name_ops_analysis}Op_{ii}")for ii in the_indices]
-        
-        for the_sel, the_group_name in the_selections:
-            if the_group_name in the_group_rows_cols:
-                del the_matrix_correlator_data[f"{the_irrep}/Operators_Analysis/{the_group_name}"]
-
-            group_i = the_group_rows_cols.create_group(the_group_name)
-
-            the_new_corrs = the_op_method(the_mod_data, the_mod_data_rs, the_sel)
-
-            the_mean_corr = np.asarray(the_new_corrs[0], dtype=np.float64)
-            the_rs_real = np.asarray(the_new_corrs[1], dtype=np.float64)
-
-            the_mean_corr = vfa.RESHAPING_EIGENVALS_MEAN(the_mean_corr)
-            the_rs_real = vfa.RESHAPING_EIGENVALS_RS(the_rs_real)
-
-            print(f"Size of the Correlation matrix: {the_mean_corr.shape[-1]}x{the_mean_corr.shape[-1]}\nTime slices: {the_nt[0]} - {the_nt[-1]}\nResampling data: {the_resampling_scheme} {the_rs_real.shape[1]}\n----------------------------------------------")
-
-            vfa.DOING_THE_GEVP([the_t0_min, the_t0_max], the_nt, the_mean_corr, the_rs_real, the_type_rs, the_sorting, the_sorting_process, the_rs_sorting_process, group_i)
+            the_mod_data_rs = this_data_corr['Resampled'][:, :, the_chosen_op_list[jj]][:, :, :, the_chosen_op_list[jj]]
+            the_mod_data_sigmas = this_data_corr['Sigmas'][the_chosen_op_list[jj], :]
+            
+            print(f"Size of the Correlation matrix: {the_mod_data.shape[-1]}x{the_mod_data.shape[-1]}\nTime slices: {the_nt[0]} - {the_nt[-1]}\nResampling data: {the_resampling_scheme} {the_mod_data_rs.shape[1]}\n----------------------------------------------")
+            
+            print('      OPERATORS LIST \n----------------------------------------------')
+            for i in range(len(the_mod_op_list)):
+                print(f'       {the_mod_op_list[i].decode('utf-8')}')
+            
+            g_i = the_matrix_correlator_data_reduced.create_group(the_irrep)
+            g_i.create_dataset('Correlators/Real/Mean', data = the_mod_data)
+            g_i.create_dataset('Correlators/Real/Resampled', data = the_mod_data_rs)
+            g_i.create_dataset('Correlators/Real/Sigmas', data = the_mod_data_sigmas)
+            g_i.create_dataset('Time_slices', data = the_nt)
+            g_i.create_dataset('Operators', data = the_mod_op_list) 
+            
+            group_gevp = g_i.create_group('GEVP')
+            
+            vfa.DOING_THE_GEVP([the_t0_min, the_t0_max], the_nt, the_mod_data, the_mod_data_rs, the_type_rs, the_sorting, the_sorting_process, the_rs_sorting_process, group_gevp)
+            
+        elif len(the_chosen_op_list[jj])<1:
+            print("OBS: No reduction in the operator's set.")
+            
+            print(f"Size of the Correlation matrix: {this_data_corr['Mean'].shape[-1]}x{this_data_corr['Mean'].shape[-1]}\nTime slices: {the_nt[0]} - {the_nt[-1]}\nResampling data: {the_resampling_scheme} {this_data_corr['Resampled'].shape[1]}\n----------------------------------------------")
+            
+            print('      OPERATORS LIST \n----------------------------------------------')
+            for i in range(len(the_op_list)):
+                print(f'       {the_op_list[i].decode('utf-8')}')
+            
+            g_i = the_matrix_correlator_data_reduced.create_group(the_irrep)
+            g_i.create_dataset('Correlators/Real/Mean', data = this_data_corr['Mean'])
+            g_i.create_dataset('Correlators/Real/Resampled', data = this_data_corr['Resampled'])
+            g_i.create_dataset('Correlators/Real/Sigmas', data = this_data_corr['Sigmas'])
+            g_i.create_dataset('Time_slices', data = the_nt)
+            g_i.create_dataset('Operators', data = the_op_list) 
+            
+            group_gevp = g_i.create_group('GEVP')
+            vfa.DOING_THE_GEVP([the_t0_min, the_t0_max], the_nt, this_data_corr['Mean'], this_data_corr['Resampled'], the_type_rs, the_sorting, the_sorting_process, the_rs_sorting_process, group_gevp)
         
     end_time = time.time()
+    print(f'TIME TAKEN: {(end_time-begin_time)/60} mins')
             
 
 
@@ -137,52 +125,42 @@ def OperatorsAnalysis(the_matrix_correlator_data, the_type_rs, the_operator_anal
 if __name__=="__main__":
     import ensembles as ed
     
-    ### Ensemble you want to analyse
-    myEns = str(sys.argv[1]).upper()
-    
-    ### Type of resampling 'bt' or 'jk'
-    myTypeRs = str(sys.argv[2]).lower()
+    myArgs = vfp.parse_args()
+    myRuns = vfp.WhichRuns(myArgs, ed.ensembles)
     
     ### Rebinning
-    myRebinOn = str(sys.argv[3]).lower()
-    myRb = 1
+    reBin = f"_bin{myRuns.rb}" if myRuns.rebin else ""
     
-     ### How the eigenstates are sorted
-    mySorting = 'eigenvals' #'eigenvals' # 'vecs_fix' # 'vecs_fix_norm' # 'vecs_var' # 'vecs_var_norm'
-    myRsSorting = None # mySorting # None
-    myTD = None
-    
-    myOperatorMethod = 'from_list' # 'adding' # 'removing' # 'from_list'
-    
-    ### Min and Max t0 to do the GEVP
-    myT0Min = int(input('T0 min: '))
-    myT0Max = int(input('T0 max: ')) 
-    
-    myLocation = vfl.DIRECTORY_EXISTS(f'{ed.outputLocation}{myEns}/')
-    
-    myNrIrreps=None #1 #2
-    
-    ### Rebin naming
-    if myRebinOn=='rb': 
-        reBin = f'_bin{myRb}'
-    else: 
-        reBin = ''
+    ### Root Location of your hdf5 file that contains the correlators already resampled and averaged.
+    myLocation = vfl.DIRECTORY_EXISTS(f'{ed.outputLocation}{myRuns.ensemble}/')
     
     ### Name of this version of analysis
-    myVersion =  f'_{myEns}_{myChosenIsospin}_test' 
-    
-    myArchivo = h5py.File(ed.ensembles[myEns][myIsospin]['fm'], 'r')
+    myIsospin = myRuns.isospin
+    myChosenIsospin = ed.ensembles[myRuns.ensemble][myIsospin]['iso_tag']
+    myArchivo = h5py.File(ed.ensembles[myRuns.ensemble][myIsospin]['fm'], 'r')
     myIrreps = list(myArchivo.keys())
     myArchivo.close()
-    myListOperators = ed.ensembles[myEns][myIsospin]['operatorsChoice']
+    myVersion =  f'{myRuns.ensemble}_{myChosenIsospin}_reduced_test' 
     
-    vf.INFO_PRINTING(myWhichCorrelator, myEns)
+    ### Min and Max t0 to do the GEVP
+    mySorting = myRuns.gevp.sorting
+    myTD = myRuns.gevp.td
+    myRsSorting = myRuns.gevp.rs_sorting
     
-    myArchivo = f'{myLocation}Matrix_correlators_{myTypeRs}{reBin}_v{myVersion}.h5'
+    myT0Min = myRuns.gevp.t0min
+    myT0Max = myRuns.gevp.t0max
+        
+    ### This is the file that cotains the averaged correlators and stuff
+    myArchivo = f'{myLocation}Matrix_correlators_{myRuns.rs_type}{reBin}_{myVersion}.h5'
+    myChosenOpsList = ed.ensembles[myRuns.ensemble][myIsospin]['operatorsChoice']
+    
     myMatrixCorrelatorData = h5py.File(myArchivo,'r+')
     
-    OperatorsAnalysis(myMatrixCorrelatorData, myTypeRs, myOperatorMethod, myIrreps, myT0Min, myT0Max, ops_analysis_list = myListOperators)
+    OperatorsAnalysis(myMatrixCorrelatorData, myRuns.rs_type, myIrreps, myT0Min, myT0Max, locationWorkedCorrelators, myChosenOpsList, sorting = mySorting, the_td = myTD, rs_sorting = myRsSorting)
+    myMatrixCorrelatorData.close()   
     
-    myArchivo.close()
+    print('-'*(len(myArchivo)+1))
+    print('Saved as: \n' + myArchivo)
+    print('_'*(len(myArchivo)+1))
     
     
