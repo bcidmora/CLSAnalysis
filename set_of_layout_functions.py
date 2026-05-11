@@ -218,7 +218,7 @@ def WhichRuns(args, the_ensemble_data):
         ops_flag=args.ops_flag,
         
         the_irreps = the_irreps,
-        ib_corr = ib_corr,
+        ib_corr = args.ib_corr,
         )
     
 ## Comments:
