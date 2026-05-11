@@ -40,6 +40,4 @@ To run the script, the directories must be modified, after that one can do the f
    * Isospin: Isosinglet
    * Resampling scheme: Bootstrap with 500 samples
    * Does the Resampling (--corrs), GEVP of the full set (--eigenvals) with t0min and t0max, it computes the effective masses of the diagonal correlators and of the eigenvalues, does the fitting using 1-exp fit forms, and it starts on the first irrep 1 and it finishes on the second.
-
-   * 
     
