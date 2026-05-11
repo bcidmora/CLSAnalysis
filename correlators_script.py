@@ -13,7 +13,7 @@ def SingleCorrelatorAnalysis(the_archivo, the_location, the_version, the_type_rs
     print("                     CORRELATORS ANALYSIS \n")
     
     ### It chooses the rebin
-    if kwargs.get('rebin_on')=='rb': 
+    if kwargs.get('rebin_on'): 
         if kwargs.get('rb')==None:
             rb, the_re_bin = 1, '' 
             print(f'Missing argument: bin size. Using bin size equals {rb}.')
@@ -78,7 +78,7 @@ def SingleCorrelatorAnalysis(the_archivo, the_location, the_version, the_type_rs
         norm_reweight = vfa.RW_NORMALIZATION(binned_rw, len(binned_rw))
     
     ### This is the single correlators data
-    the_single_correlator_data = h5py.File(f'{the_location}/Single_correlators_{the_type_rs}{the_re_bin}_v{the_version}.h5','w')
+    the_single_correlator_data = h5py.File(f'{the_location}/Single_correlators_{the_type_rs}{the_re_bin}_{the_version}.h5','w')
     
     begin_time = time.time()
     ### Start of the analysis for the nr. of irreps.
@@ -112,7 +112,7 @@ def SingleCorrelatorAnalysis(the_archivo, the_location, the_version, the_type_rs
         rw_datos = vfa.REWEIGHTED_CORR(the_datos_raw.real, the_weight)
         
         ### If there is binning, then this applies to the  data and to the reweighting factors
-        if kwargs.get('rebin_on')=='rb':
+        if kwargs.get('rebin_on'):
             if rb == 'C':
                 the_binned_datos, bin_weights = zip(*(vfa.BINNING_CUSTOM(rw_datos[tt]) for tt in range(len(rw_datos))))
                 the_datos = np.asarray(the_binned_datos)
@@ -168,7 +168,7 @@ def SingleCorrelatorAnalysis(the_archivo, the_location, the_version, the_type_rs
     the_single_correlator_data.close()
     end_time = time.time()
     print(f'TIME TAKEN: {(end_time-begin_time)/60} mins')
-    return  f'{the_location}Single_correlators_{the_type_rs}{the_re_bin}_v{the_version}.h5'
+    return  f'{the_location}Single_correlators_{the_type_rs}{the_re_bin}_{the_version}.h5'
     
 
 
@@ -177,7 +177,7 @@ def MultiCorrelatorAnalysis(the_archivo, the_location, the_version, the_type_rs,
     print("                     CORRELATORS ANALYSIS \n")
     
     ### It chooses the rebin
-    if kwargs.get('rebin_on')=='rb': 
+    if kwargs.get('rebin_on'): 
         if kwargs.get('rb')==None:
             rb, the_re_bin = 1, '' 
             print(f'Missing argument: bin size. Using bin size equals {rb}.')
@@ -241,7 +241,7 @@ def MultiCorrelatorAnalysis(the_archivo, the_location, the_version, the_type_rs,
         norm_reweight = vfa.RW_NORMALIZATION(binned_rw, len(binned_rw))
     
     ### This is the single correlators data
-    the_matrix_correlator_data = h5py.File(f'{the_location}/Matrix_correlators_{the_type_rs}{the_re_bin}_v{the_version}.h5','w')    
+    the_matrix_correlator_data = h5py.File(f'{the_location}/Matrix_correlators_{the_type_rs}{the_re_bin}_{the_version}.h5','w')    
     
     begin_time = time.time()
     ### Start of the analysis for the nr. of irreps.
@@ -274,7 +274,7 @@ def MultiCorrelatorAnalysis(the_archivo, the_location, the_version, the_type_rs,
         for n1, n2 in np.ndindex(the_size_matrix, the_size_matrix):
             the_n_data = the_datos_raw[:, n1, n2, :].real
             rw_datos = vfa.REWEIGHTED_CORR(the_n_data, the_weight)
-            if kwargs.get('rebin_on')=='rb':
+            if kwargs.get('rebin_on'):
                 if rb == 'C':
                     rw_t_datos, bin_weights = np.asarray([vfa.BINNING_CUSTOM(rw_datos[tt], rb) for tt in range(rw_datos.shape[0])])
                     bins = list(rw_t_datos)
@@ -336,7 +336,7 @@ def MultiCorrelatorAnalysis(the_archivo, the_location, the_version, the_type_rs,
     the_matrix_correlator_data.close()
     end_time = time.time()
     print(f'TIME TAKEN: {(end_time-begin_time)/60} mins')    
-    return f'{the_location}/Matrix_correlators_{the_type_rs}{the_re_bin}_v{the_version}.h5'
+    return f'{the_location}/Matrix_correlators_{the_type_rs}{the_re_bin}_{the_version}.h5'
 
 
 
@@ -345,14 +345,14 @@ def MultiCorrelatorAnalysisRatios(the_multi_hadrons_archivo, the_single_hadrons_
     print("                     CORRELATORS RATIO ANALYSIS \n")
     
     
-    ### It chooses the rebin
-    if kwargs.get('rebin_on')=='rb': 
+     ### It chooses the rebin
+    if kwargs.get('rebin_on'): 
         if kwargs.get('rb')==None:
             rb, the_re_bin = 1, '' 
-            print('Missing argument: bin size. Using bin size equals %s.'%rb)
+            print(f'Missing argument: bin size. Using bin size equals {rb}.')
         else:
             rb = int(kwargs.get('rb'))
-            the_re_bin = '_bin'+str(rb)
+            the_re_bin = f'_bin{rb}'
     else:
         rb, the_re_bin = 1, ''  
         
@@ -371,7 +371,7 @@ def MultiCorrelatorAnalysisRatios(the_multi_hadrons_archivo, the_single_hadrons_
     m_irreps = the_m_irreps[the_first_irrep:the_last_irrep]
     
     ### This is the single correlators data
-    the_ratio_matrix_correlator_data = h5py.File(f'{the_location}/Ratio_matrix_correlators_{the_type_rs}{the_re_bin}_v{the_version}.h5','w')    
+    the_ratio_matrix_correlator_data = h5py.File(f'{the_location}/Ratio_matrix_correlators_{the_type_rs}{the_re_bin}_{the_version}.h5','w')    
     
     begin_time = time.time()
     ### Start of the analysis for the nr. of irreps.
@@ -381,7 +381,7 @@ def MultiCorrelatorAnalysisRatios(the_multi_hadrons_archivo, the_single_hadrons_
         this_data = the_multi_hadrons_archivo[the_irrep]
         
         ### The operators list in this irrep and the time slices
-        the_op_list, the_nt = list(this_data.get('Operators')), np.array(this_data.get('Time_slices'))
+        the_op_list, the_nt = list(this_data['Operators']), np.array(this_data['Time_slices'])
         
         ### The number of operators in this irrep
         the_size_matrix = len(the_op_list)
@@ -482,7 +482,7 @@ def MultiCorrelatorAnalysisRatios(the_multi_hadrons_archivo, the_single_hadrons_
     the_ratio_matrix_correlator_data.close()
     end_time = time.time()
     print(f'TIME TAKEN: {(end_time-begin_time)/60} mins')    
-    return f'{the_location}/Ratio_matrix_correlators_{the_type_rs}{the_re_bin}_v{the_version}.h5'
+    return f'{the_location}/Ratio_matrix_correlators_{the_type_rs}{the_re_bin}_{the_version}.h5'
     
 
 ### ------------------------------- END FUNCTIONS ----------------------------------------------------
@@ -501,80 +501,56 @@ if __name__== "__main__":
     
     import ensembles as ed
     
-    isoBreaking = False
-    
-    ### The ensemble
-    myEns = str(sys.argv[1]).upper()
-    
-    ### Single hadrons or multihadrons
-    myWhichCorrelator = str(sys.argv[2]).lower()
-    
-    ### Which isospin to do
-    myIsospin = str(sys.argv[3]).lower()
-    
-    ### Type of resampling 'bt' or 'jk'
-    myTypeRs = str(sys.argv[4]).lower()
-    
-    ### Rebinning or not
-    myRebinOn = str(sys.argv[5]).lower()
-    myRb = 10 # 'C' if special binning for ensemble e.g. E250
-    
-    ### Default bootstrap sampling
-    myKbt = 500
-    
-    ### This is the amount of irreps to compute or when to start and when to finish the analysis
-    myNrIrreps = None # 2 # 1
-    myFirstIrrep = None # None # 1 # 2
-    myLastIrrep = None # None
+    myArgs = vfp.parse_args()
+    myRuns = vfp.WhichRuns(myArgs, ed.ensembles)
     
     myKbtSamples = None #np.array(np.loadtxt('bootstrap_samples.txt')) #None
     
     ### This is just naming schemes
-    if myRebinOn=='rb': 
-        reBin = f'_bin{myRb}'
-    else: 
-        reBin = ''
+    reBin = f"_bin{myRuns.rb}" if myRuns.rebin else ""
         
     ### Information from the ensembles dictionary
-    myLocation = vfl.DIRECTORY_EXISTS(f'{ed.location}/CorrelatorData/{myEns}/')
+    myLocation = vfl.DIRECTORY_EXISTS(f'{ed.outputLocation}{myRuns.ensemble}/')
 
-    myCnfgs = ed.ensembles[myEns]['ncfgs'] # None # 20 # 100
-    myWeight = vfa.REWEIGHTS(ed.ensembles[myEns]['weight_raw'], myCnfgs)
+    myCnfgs = ed.ensembles[myRuns.ensemble]['ncfgs'] # None # 20 # 100
+    myWeight = vfa.REWEIGHTS(ed.ensembles[myRuns.ensemble]['weight_raw'], myCnfgs)
 
-    if not ed.ensembles[myEns]['allConfigs']:
-        myTempCnfgs = ed.ensembles[myEns]['nfgsList']
+    if not ed.ensembles[myRuns.ensemble]['allConfigs']:
+        myTempCnfgs = ed.ensembles[myRuns.ensemble]['nfgsList']
         myCnfgs = len(myTempCnfgs)
         myWeight = np.asarray(vfa.RW_NORMALIZATION([myWeight[ii] for ii in myTempCnfgs], myCnfgs), dtype=np.float128)
 
-    myChosenIsospin = ed.ensembles[myEns][myIsospin]['iso_tag']
+    vfl.INFO_PRINTING(myRuns.correlator, myRuns.ensemble)
     
-    vfl.INFO_PRINTING(myWhichCorrelator, myEns)
-    
-    if myWhichCorrelator =='s':        
+    if myRuns.correlator =='s':        
         ### Name of the output file
-        myVersion =  f'_{myEns}_singles_test' 
-        
-        if isoBreaking:
-            myArchivo = h5py.File(ed.ensembles[myEns]['ib']['fs'], 'r')
-            myIrreps = list(myArchivo.keys())
+        if not myRuns.ib_corr:
+            myVersion =  f'{myRuns.ensemble}_singles_test' 
+            myArchivoPre = ed.ensembles[myRuns.ensemble]
         else:
-            myArchivo = h5py.File(ed.ensembles[myEns]['fs'], 'r')
-            myIrreps = list(myArchivo.keys())
+            myVersion =  f'{myRuns.ensemble}_omega_test' 
+            myArchivoPre = ed.ensembles[myRuns.ensemble]['ib']
+    
+        myArchivo = h5py.File(myArchivoPre['fs'], 'r')
+        myIrreps = list(myArchivo.keys())  
         
-        savedLocation = SingleCorrelatorAnalysis(myArchivo, myLocation, myVersion, myTypeRs, myIrreps, myWeight, rebin_on = myRebinOn, rb = myRb, kbt = myKbt, number_cfgs = myCnfgs, nr_irreps=myNrIrreps, own_kbt_list = myKbtSamples, first_irrep = myFirstIrrep , last_irrep = myLastIrrep)
+        savedLocation = SingleCorrelatorAnalysis(myArchivo, myLocation, myVersion, myRuns.rs_type, myIrreps, myWeight, rebin_on = myRuns.rebin, rb = myRuns.rb, kbt = myRuns.kbt, number_cfgs = myCnfgs, nr_irreps = myRuns.the_irreps.nr_irreps, own_kbt_list = myKbtSamples, first_irrep = myRuns.the_irreps.first_irrep, last_irrep = myRuns.the_irreps.last_irrep)
         
         myArchivo.close()
     
-    elif myWhichCorrelator=='m':
+    elif myRuns.correlator=='m':
         ### Name of the output file
-        myVersion =  f'_{myEns}_{myChosenIsospin}_test'
-        
-        myArchivo = h5py.File(ed.ensembles[myEns][myIsospin]['fm'], 'r')
+        myIsospin = myRuns.isospin
+        myChosenIsospin = ed.ensembles[myRuns.ensemble][myIsospin]['iso_tag']
+        myArchivo = h5py.File(ed.ensembles[myRuns.ensemble][myIsospin]['fm'], 'r')
         myIrreps = list(myArchivo.keys())
+        myVersion =  f'{myRuns.ensemble}_{myChosenIsospin}_test' 
         
-        savedLocation = MultiCorrelatorAnalysis(myArchivo, myLocation, myVersion, myTypeRs, myIrreps, myWeight, rebin_on = myRebinOn, rb = myRb, kbt = myKbt, number_cfgs = myCnfgs, nr_irreps=myNrIrreps, own_kbt_list=myKbtSamples, first_irrep = myFirstIrrep , last_irrep = myLastIrrep)
+        savedLocation = MultiCorrelatorAnalysis(myArchivo, myLocation, myVersion, myRuns.rs_type, myIrreps, myWeight, rebin_on = myRuns.rebin, rb = myRuns.rb, kbt = myRuns.kbt, number_cfgs = myCnfgs, nr_irreps = myRuns.the_irreps.nr_irreps, own_kbt_list = myKbtSamples, first_irrep = myRuns.the_irreps.first_irrep, last_irrep = myRuns.the_irreps.last_irrep)
         
         myArchivo.close()
+    elif myRuns.correlator=='mr':
+        print("Still working on this...")
     else:
         print('NOT AN OPTION.\nQUITTING.')
         sys.exit()

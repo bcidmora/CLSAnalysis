@@ -27,10 +27,10 @@ def SingleCorrelatorEffectiveMass(the_single_correlator_data, the_type_rs,**kwar
         this_data = the_single_correlator_data[the_list_name_irreps[j]]
         
         ### Mean values of the real part of the correlator to get the effective masses
-        the_mean_corr_real = np.asarray(this_data.get('Correlators/Real/Mean'))
+        the_mean_corr_real = np.asarray(this_data['Correlators/Real/Mean'])
         
         ### The real part of the resampled data
-        the_rs_real = np.transpose(np.asarray(this_data.get('Correlators/Real/Resampled')), (1,0))
+        the_rs_real = np.transpose(np.asarray(this_data['Correlators/Real/Resampled']), (1,0))
         
         ### Effective Mass computation
         the_em_rs_f =  vfa.EFF_MASS(the_mean_corr_real, the_dist_eff_mass)
@@ -60,7 +60,7 @@ def SingleCorrelatorEffectiveMass(the_single_correlator_data, the_type_rs,**kwar
 
 def SingleCorrelatorEffectiveMassIB(the_single_correlator_data, the_type_rs,**kwargs):   
     
-    print("                     EFFECTIVE MASSES COMPUTATION \n")
+    print("                  EFFECTIVE MASSES COMPUTATION WITH IB\n")
     
     ### Defining distance between time-slice elements of the correlator
     the_dist_eff_mass = int(kwargs.get('dist_eff_mass', 1))
@@ -73,10 +73,10 @@ def SingleCorrelatorEffectiveMassIB(the_single_correlator_data, the_type_rs,**kw
     this_data = the_single_correlator_data[the_list_name_irreps[0]]
     
     ### The real part of the resampled data
-    the_rs_real = np.transpose(np.asarray(this_data.get('Correlators/Real/Resampled')), (1,0))
+    the_rs_real = np.transpose(np.asarray(this_data['Correlators/Real/Resampled']), (1,0))
     
     ### Mean values of the real part of the correlator to get the effective masses
-    the_mean_corr_real = np.asarray(this_data.get('Correlators/Real/Mean'))
+    the_mean_corr_real = np.asarray(this_data['Correlators/Real/Mean'])
     
     ### Effective Mass computation
     the_em_rs_f =  vfa.EFF_MASS(the_mean_corr_real, the_dist_eff_mass)
@@ -94,12 +94,12 @@ def SingleCorrelatorEffectiveMassIB(the_single_correlator_data, the_type_rs,**kw
     this_data_qed = the_single_correlator_data[the_list_name_irreps[2]]
     
     ### mean vals
-    the_mean_corr_real_mass = np.asarray(this_data_mass.get('Correlators/Real/Mean'))
-    the_mean_corr_real_qed = np.asarray(this_data_qed.get('Correlators/Real/Mean'))
+    the_mean_corr_real_mass = np.asarray(this_data_mass['Correlators/Real/Mean'])
+    the_mean_corr_real_qed = np.asarray(this_data_qed['Correlators/Real/Mean'])
             
     ### resamples
-    the_rs_real_mass = np.transpose(np.asarray(this_data_mass.get('Correlators/Real/Resampled')), (1,0))
-    the_rs_real_qed = np.transpose(np.asarray(this_data_qed.get('Correlators/Real/Resampled')), (1,0))
+    the_rs_real_mass = np.transpose(np.asarray(this_data_mass['Correlators/Real/Resampled']), (1,0))
+    the_rs_real_qed = np.transpose(np.asarray(this_data_qed['Correlators/Real/Resampled']), (1,0))
     
     ### Effective Mass computation
     the_em_rs_f_mass =  vfa.EFF_MASS_CORRECTIONS(the_mean_corr_real_mass, the_mean_corr_real)
@@ -142,10 +142,6 @@ def MultiCorrelatorEffectiveMass(the_matrix_correlator_data, the_type_rs, **kwar
     ### Defining distance between time-slice elements of the correlator
     the_dist_eff_mass = int(kwargs.get('dist_eff_mass', 1))
     
-    the_diagonal_corrs_flag = kwargs.get('diag_corrs')
-    the_gevp_flag = kwargs.get('gevp')
-    the_operators_analysis_flag = kwargs.get('ops_analysis')    
-    
     ### The irreps
     the_list_name_irreps = list(the_matrix_correlator_data.keys())    
     
@@ -171,58 +167,41 @@ def MultiCorrelatorEffectiveMass(the_matrix_correlator_data, the_type_rs, **kwar
         the_reshaped_mean_corr = vfa.RESHAPING_CORRELATORS(the_mean_corr_real)
         the_reshaped_rs_corr = vfa.RESHAPING_CORRELATORS_RS(the_rs_real)
         
-        ### Loop over the nr. of operators = size of the correlator matrix
-        if the_diagonal_corrs_flag:
+        ### Loop over the nr. of operators = size of the correlator matrix            
+        print("Effective Masses of correlator's diagonal in process...")
+        
+        the_ncnfgs = len(the_rs_real[0])
+        the_efm_mass = np.asarray([vfa.EFF_MASS(the_reshaped_mean_corr[ii, ii],the_dist_eff_mass) for ii in range(the_size_matrix)])
+        
+        the_sigma_efm = []
+        for ii in range(the_size_matrix):
             
-            print("Effective Masses of correlator's diagonal in process...")
+            ### Loop over the resamples                
+            the_rs_eff = vfa.NT_TO_NCFGS(np.asarray([vfa.EFF_MASS(the_reshaped_rs_corr[ii, ii, xyz], the_dist_eff_mass) for xyz in range(the_ncnfgs)]))
             
-            the_ncnfgs = len(the_rs_real[0])
-            the_efm_mass = np.asarray([vfa.EFF_MASS(the_reshaped_mean_corr[ii, ii],the_dist_eff_mass) for ii in range(the_size_matrix)])
-            
-            the_sigma_efm = []
-            for ii in range(the_size_matrix):
+            ### MEan value of the resampled data to compute the sigma vals.
+            the_rs_mean_eff = vfa.MEAN(the_rs_eff)
+            the_sigma_efm.append(vfa.STD_DEV_MEAN(the_rs_eff, the_rs_mean_eff, the_type_rs))
                 
-                ### Loop over the resamples                
-                the_rs_eff = vfa.NT_TO_NCFGS(np.asarray([vfa.EFF_MASS(the_reshaped_rs_corr[ii, ii, xyz], the_dist_eff_mass) for xyz in range(the_ncnfgs)]))
-                
-                ### MEan value of the resampled data to compute the sigma vals.
-                the_rs_mean_eff = vfa.MEAN(the_rs_eff)
-                the_sigma_efm.append(vfa.STD_DEV_MEAN(the_rs_eff, the_rs_mean_eff, the_type_rs))
-                    
-                ### If the branch Effective Masses exists in the file, then it gets deleted and created a new one with the new values.
-            the_group_real = this_data.get('Correlators/Real')
-            
-            if 'Effective_masses' in the_group_real.keys(): 
-                del the_matrix_correlator_data[f'{the_list_name_irreps[j]}/Correlators/Real/Effective_masses']
-            the_group_real.create_dataset('Effective_masses', data = np.array(the_efm_mass))
-            
-            if 'Effective_masses_sigmas' in the_group_real.keys(): 
-                del the_matrix_correlator_data[f'{the_list_name_irreps[j]}/Correlators/Real/Effective_masses_sigmas']
-            the_group_real.create_dataset('Effective_masses_sigmas', data = np.array(the_sigma_efm))
+            ### If the branch Effective Masses exists in the file, then it gets deleted and created a new one with the new values.
+        the_group_real = this_data['Correlators/Real']
+        
+        if 'Effective_masses' in the_group_real.keys(): 
+            del the_matrix_correlator_data[f'{the_list_name_irreps[j]}/Correlators/Real/Effective_masses']
+        the_group_real.create_dataset('Effective_masses', data = np.array(the_efm_mass))
+        
+        if 'Effective_masses_sigmas' in the_group_real.keys(): 
+            del the_matrix_correlator_data[f'{the_list_name_irreps[j]}/Correlators/Real/Effective_masses_sigmas']
+        the_group_real.create_dataset('Effective_masses_sigmas', data = np.array(the_sigma_efm))
             
         ### If the GEVP was performed, then it will identify this section.
-        if 'GEVP' in this_data.keys() and the_gevp_flag: 
+        if 'GEVP' in this_data.keys():
             
             gevp_group = this_data.get('GEVP')
                 
             print("Effective Masses of GEVP eigenvalues in process...")
             
             vfa.DOING_EFFECTIVE_MASSES_EIGENVALUES(gevp_group, the_dist_eff_mass, the_type_rs)
-                
-        ### If the Operator Analysis was performed, this section will also be identified. 
-        if 'Operators_Analysis' in this_data.keys() and the_operators_analysis_flag:
-            
-            the_ops_group = this_data['Operators_Analysis']
-            the_ops_keys = the_ops_group.keys()
-            
-            the_type_ops_analysis = {"Ops_chosen": True, "Add_Op": True, "Remove_Op": True}
-            
-            print("Effective Masses of Operator-Analysis eigenvalues in process...")
-            
-            for the_type in the_type_ops_analysis:
-                for key in the_ops_group:
-                    if the_type in key:
-                        vfa.DOING_EFFECTIVE_MASSES_EIGENVALUES(the_ops_group[key], the_dist_eff_mass, the_type_rs)
             
             print(f'Irrep nr.: {j+1} out of {len(the_list_name_irreps)}')
     end_time = time.time()
@@ -313,47 +292,43 @@ def RatioMultiCorrelatorEffectiveMass(the_matrix_correlator_data, the_type_rs, *
 
 
 if __name__=="__main__":
-    myEns = str(sys.argv[1]).upper()
-    myWhichCorrelator = str(sys.argv[2]).lower()
-    myTypeRs = str(sys.argv[3]).lower()
-    myRebinOn = str(sys.argv[4]).lower()
-    myRb = 1
-    myVersion = 'test'
-    myEffMassDistance = 1 #None #2 #3
+    import ensembles as ed
     
-    if myRebinOn=='rb': 
-        rb = int(myRb)
-        reBin = '_bin'+str(rb)
-    else:
-        reBin = ''  
+    myArgs = vfl.parse_args()
+    myRuns = vfl.WhichRuns(myArgs, ed.ensembles)
     
-    if myEns == 'N451': from files_n451 import location, the_hadron_state
-    elif myEns == 'N201': from files_n201 import location, the_hadron_state
-    elif myEns == 'D200': from files_d200 import location, the_hadron_state
-    elif myEns == 'X451': from files_x451 import location, the_hadron_state
+    reBin = f"_bin{myRuns.rb}" if myRuns.rebin else ""
     
-    myLocation = vf.DIRECTORY_EXISTS(location + 'CorrelatorData/%s/'%myEns)
+    myLocation = vfl.DIRECTORY_EXISTS(f'{ed.outputLocation}{myRuns.ensemble}/')
     
-    vf.INFO_PRINTING(myWhichCorrelator, myEns)
+    vfl.INFO_PRINTING(myWhichCorrelator, myEns)
     
-    if myWhichCorrelator=='s':
-        myNameArchivo = myLocation + 'Single_correlators_' + myTypeRs + reBin + '_v%s.h5'%myVersion
-        mySingleCorrelatorData = h5py.File(myNameArchivo,'r+')            
-        SingleCorrelatorEffectiveMass(mySingleCorrelatorData,  myTypeRs, dist_eff_mass = myEffMassDistance) 
+    if myRuns.correlator =='s':
+        if not myRuns.ib_corr:
+            myVersion =  f'{myRuns.ensemble}_singles_test' 
+            myEffMassFunction = SingleCorrelatorEffectiveMass
+        else:
+            myVersion =  f'{myRuns.ensemble}_omega_test' 
+            myEffMassFunction = SingleCorrelatorEffectiveMassIB
+            
+        mySingleCorrelatorData = h5py.File(f'{myLocation}Single_correlators_{myRuns.rs_type}{reBin}_{myVersion}.h5', 'r')
+        myIrreps = list(mySingleCorrelatorData.keys())  
+        
+        myEffMassFunction(mySingleCorrelatorData,  myRuns.rs_type, dist_eff_mass = myRuns.dist_eff_mass) 
         mySingleCorrelatorData.close()
     
-    elif myWhichCorrelator=='m':        
-        myNameArchivo = myLocation + 'Matrix_correlators_bt_bin10_v8_old_oficial.h5'
-        # myNameArchivo = myLocation + 'Matrix_correlators_bt_bin10_v8_old_oficial_new_gevp.h5'
-        # myNameArchivo = myLocation + 'Matrix_correlators' + the_hadron_state + myTypeRs + reBin + '_v%s.h5'%myVersion
+    elif myWhichCorrelator=='m':    
+        myVersion =  f'_{myEns}_{myChosenIsospin}_test' 
+        myNameArchivo = f'{myLocation}Matrix_correlators_{myRuns.rs_type}{reBin}_v{myVersion}.h5'
+        
         myMatrixCorrelatorData = h5py.File(myNameArchivo, 'r+')
-        MultiCorrelatorEffectiveMass(myMatrixCorrelatorData, myTypeRs, dist_eff_mass = myEffMassDistance, gevp=True)
+        MultiCorrelatorEffectiveMass(myMatrixCorrelatorData, myRuns.rs_type, dist_eff_mass = myRuns.dist_eff_mass, diag_corrs= myDiagonalCorrs, gevp=myGevpFlag, ops_analysis=myOperatorsFlag)
         myMatrixCorrelatorData.close()
     
     elif myWhichCorrelator=='mr':
-        myNameArchivo = myLocation + 'Matrix_correlators_ratios_' + myTypeRs + reBin + '_v%s.h5'%myVersion
+        myNameArchivo = f'{myLocation}Matrix_correlators_ratios_{myRuns.rs_type}{reBin}_v{myVersion}.h5'
         myRatioMatrixCorrelatorData = h5py.File(myNameArchivo, 'r+')
-        MultiCorrelatorEffectiveMass(myRatioMatrixCorrelatorData, myTypeRs)
+        MultiCorrelatorEffectiveMass(myRatioMatrixCorrelatorData, myRuns.rs_type)
         myRatioMatrixCorrelatorData.close()
     
     print('-'*(len(myNameArchivo)+1))

@@ -3,7 +3,7 @@ import h5py
 import os
 
 location = os.path.expanduser("~")+"/Documents/Chris Files" # Path to your main folder
-outputLocation = os.path.expanduser("~")+"/Documents/Chris Files/CorrelatorData/"
+outputLocation = f"{location}/CorrelatorData/"
 
 fmToMev = np.float64(197.327)
 
@@ -15,7 +15,7 @@ iso_map = {
      }
 
 ens_a654 = {
-    'aLat' : np.float64(0.097), # in fm
+    'aLat' : np.float64(0.098), # in fm 2211.03744
     'betaLat' : np.float64(3.34),
     'LatSize' : np.float64(24.),
     'ncfgs' : 5068,
@@ -35,7 +35,9 @@ ens_a654 = {
             'multiTMaxFits' : [[]],
             'multiTMinResults' : [[]],
             'nonInteractingLevels' : [ []],
-            'operatorRemovalChoice': [[]],
+            'operatorsChoice': [[]],
+            'multiTMaxFitsOpChoices' : [[]],
+            'multiTMinResultsOpChoices' : [[]],
             },
     'd' : { 'iso_name' : iso_map['d'][0],
             'iso_tag' : iso_map['d'][1],
@@ -44,7 +46,9 @@ ens_a654 = {
             'multiTMaxFits' : [[]],
             'multiTMinResults' : [[]],
             'nonInteractingLevels' : [ []],
-            'operatorRemovalChoice': [[]],
+            'operatorsChoice': [[]],
+            'multiTMaxFitsOpChoices' : [[]],
+            'multiTMinResultsOpChoices' : [[]],
             },
     't' : { 'iso_name' : iso_map['t'][0],
             'iso_tag' : iso_map['t'][1],
@@ -53,7 +57,9 @@ ens_a654 = {
             'multiTMaxFits' : [[]],
             'multiTMinResults' : [[]],
             'nonInteractingLevels' : [ []],
-            'operatorRemovalChoice': [[]],
+            'operatorsChoice': [[]],
+            'multiTMaxFitsOpChoices' : [[]],
+            'multiTMinResultsOpChoices' : [[]],
             },
     'q' : { 'iso_name' : iso_map['q'][0],
             'iso_tag' : iso_map['q'][1],
@@ -62,12 +68,14 @@ ens_a654 = {
             'multiTMaxFits' : [[]],
             'multiTMinResults' : [[]],
             'nonInteractingLevels' : [ []],
-            'operatorRemovalChoice': [[]],
+            'operatorsChoice': [[]],
+            'multiTMaxFitsOpChoices' : [[]],
+            'multiTMinResultsOpChoices' : [[]],
             },
     }
 
 ens_d200 = {
-    'aLat' : np.float64(0.0633), # in fm
+    'aLat' : np.float64(0.064), # in fm 2211.03744
     'betaLat' : np.float64(3.55),
     'LatSize' : np.float64(64.),
     'ncfgs' : 2001,
@@ -115,7 +123,9 @@ ens_d200 = {
                                 ['P(1)S(2)', 'K(1)N(2)', 'P(2)S(1)','K(2)N(1)', 'P(0)S(3)'], # P3_F1
                                 ['P(1)S(2)', 'K(1)N(2)', 'P(2)S(1)','K(2)N(1)', 'P(0)S(3)'], # P3_F2
                                 ['K(0)N(3)', 'P(0)S(3)', 'K(1)N(2)', 'P(1)S(2)',  'K(2)N(1)', 'K(3)N(0)']], # P3_G
-            'operatorRemovalChoice' : [[]],
+            'operatorsChoice' : [[]],
+            'multiTMaxFitsOpChoices' : [[]],
+            'multiTMinResultsOpChoices' : [[]],
             },
     'd' : { 'iso_name' : iso_map['d'][0],
             'iso_tag' : iso_map['d'][1],
@@ -144,7 +154,9 @@ ens_d200 = {
                             ['K(2)P(1)', 'K(1)P(2)'],  # PSQ3_E
                             ['K(1)P(1)', 'K(4)P(0)', 'K(2)P(2)', 'K(0)P(4)'], # PSQ4_A1
                             ['K(2)P(2)']], # PSQ4_E
-            'operatorRemovalChoice' : [['PSQ0_T1u', '0011', '0001', '0010']],
+            'operatorsChoice' : [[]],
+            'multiTMaxFitsOpChoices' : [[]],
+            'multiTMinResultsOpChoices' : [[]],
             },
     't' : { 'iso_name' : iso_map['t'][0],
             'iso_tag' : iso_map['t'][1],
@@ -161,7 +173,9 @@ ens_d200 = {
                             ['P(1)S(2)', 'K(1)N(2)', 'P(2)S(1)', 'K(2)N(1)', 'P(0)S(3)'],  # P3_F1
                             ['P(1)S(2)', 'K(1)N(2)', 'P(2)S(1)', 'K(2)N(1)', 'P(0)S(3)'],  # P3_F2
                             ['K(0)N(3)', 'P(0)S(3)', 'K(1)N(2)', 'P(1)S(2)', 'K(2)N(1)', 'K(3)N(0)']], # P3_G
-            'operatorRemovalChoice' : [['PSQ0_T1u', '0011', '0001', '0010']],
+            'operatorsChoice' : [[]],
+            'multiTMaxFitsOpChoices' : [[]],
+            'multiTMinResultsOpChoices' : [[]],
             },
     'q' : { 'iso_name' : iso_map['q'][0],
             'iso_tag' : iso_map['q'][1],
@@ -177,7 +191,9 @@ ens_d200 = {
                             ['P(1)S(2)', 'K(1)N(2)', 'P(2)S(1)', 'K(2)N(1)', 'P(0)S(3)'],  # P3_F1
                             ['P(1)S(2)', 'K(1)N(2)', 'P(2)S(1)', 'K(2)N(1)', 'P(0)S(3)'],  # P3_F2
                             ['K(0)N(3)', 'P(0)S(3)', 'K(1)N(2)', 'P(1)S(2)', 'K(2)N(1)', 'K(3)N(0)']], # P3_G
-            'operatorRemovalChoice' : [[]],
+            'operatorsChoice' : [[]],
+            'multiTMaxFitsOpChoices' : [[]],
+            'multiTMinResultsOpChoices' : [[]],
                     },
     'threshold_masses' : {'E': 0.1768, 'K': 0.15630, 'P': 0.06502},
     'singleTMinResultsCorrDiff' : {'K' : [23, 23, 23, 23, 23],
@@ -190,7 +206,7 @@ ens_d200 = {
     }
     
 ens_d450 = {
-    'aLat' : np.float64(0.0633), # in fm
+    'aLat' : np.float64(0.075), # in fm 2211.03744
     'betaLat' : np.float64(3.46),
     'LatSize' : np.float64(64.),
     'ncfgs' : 500,
@@ -210,7 +226,9 @@ ens_d450 = {
             'multiTMaxFits' : [[]],
             'multiTMinResults' : [[]],
             'nonInteractingLevels' : [ []], 
-            'operatorRemovalChoice' : [[]],
+            'operatorsChoice' : [[]],
+            'multiTMaxFitsOpChoices' : [[]],
+            'multiTMinResultsOpChoices' : [[]],
             },
     'd' : { 'iso_name' : iso_map['d'][0],
             'iso_tag' : iso_map['d'][1],
@@ -219,7 +237,9 @@ ens_d450 = {
             'multiTMaxFits' : [[]],
             'multiTMinResults' : [[]],
             'nonInteractingLevels' : [ []], 
-            'operatorRemovalChoice' : [[]],
+            'operatorsChoice' : [[]],
+            'multiTMaxFitsOpChoices' : [[]],
+            'multiTMinResultsOpChoices' : [[]],
             },
     't' : { 'iso_name' : iso_map['t'][0],
             'iso_tag' : iso_map['t'][1],
@@ -228,7 +248,9 @@ ens_d450 = {
             'multiTMaxFits' : [[]],
             'multiTMinResults' : [[]],
             'nonInteractingLevels' : [ []], 
-            'operatorRemovalChoice' : [[]],
+            'operatorsChoice' : [[]],
+            'multiTMaxFitsOpChoices' : [[]],
+            'multiTMinResultsOpChoices' : [[]],
             },
     'q' : { 'iso_name' : iso_map['q'][0],
             'iso_tag' : iso_map['q'][1],
@@ -237,12 +259,14 @@ ens_d450 = {
             'multiTMaxFits' : [[]],
             'multiTMinResults' : [[]],
             'nonInteractingLevels' : [ []], 
-            'operatorRemovalChoice' : [[]],
+            'operatorsChoice' : [[]],
+            'multiTMaxFitsOpChoices' : [[]],
+            'multiTMinResultsOpChoices' : [[]],
                     },
     }
 
 ens_e250 = {
-    'aLat' : np.float64(0.06500), # in fm
+    'aLat' : np.float64(0.064), # in fm 2211.03744
     'betaLat' : np.float64(3.55),
     'LatSize' : np.float64(96.),
     'ncfgs' : 1009,
@@ -262,7 +286,9 @@ ens_e250 = {
             'multiTMaxFits' : [[]],
             'multiTMinResults' : [[]],
             'nonInteractingLevels' : [ []],
-            'operatorRemovalChoice': [[]]
+            'operatorsChoice': [[]],
+            'multiTMaxFitsOpChoices' : [[]],
+            'multiTMinResultsOpChoices' : [[]],
             },
     'd' : { 'iso_name' : iso_map['d'][0],
             'iso_tag' : iso_map['d'][1],
@@ -271,7 +297,9 @@ ens_e250 = {
             'multiTMaxFits' : [[]],
             'multiTMinResults' : [[]],
             'nonInteractingLevels': [[]], 
-            'operatorRemovalChoice': [[]]
+            'operatorsChoice': [[]],
+            'multiTMaxFitsOpChoices' : [[]],
+            'multiTMinResultsOpChoices' : [[]],
                     },
     't' : { 'iso_name' : iso_map['t'][0],
             'iso_tag' : iso_map['t'][1],
@@ -280,7 +308,9 @@ ens_e250 = {
             'multiTMaxFits': [[]],
             'multiTMinResults': [[]],
             'nonInteractingLevels': [[]], 
-            'operatorRemovalChoice' : [[]]
+            'operatorsChoice' : [[]],
+            'multiTMaxFitsOpChoices' : [[]],
+            'multiTMinResultsOpChoices' : [[]],
             },
     'q' : { 'iso_name' : iso_map['q'][0],
             'iso_tag' : iso_map['q'][1],
@@ -289,12 +319,14 @@ ens_e250 = {
             'multiTMaxFits': [[]],
             'multiTMinResults': [[]],
             'nonInteractingLevels': [[]], 
-            'operatorRemovalChoice': [[]]
+            'operatorsChoice': [[]],
+            'multiTMaxFitsOpChoices' : [[]],
+            'multiTMinResultsOpChoices' : [[]],
             },
     }
     
 ens_n101 = {
-    'aLat' : np.float64(0.06426), # in fm
+    'aLat' : np.float64(0.085), # in fm 2211.03744
     'betaLat' : np.float64(3.4),
     'LatSize' : np.float64(48.),
     'ncfgs' : 1316,
@@ -314,7 +346,9 @@ ens_n101 = {
             'multiTMaxFits' : [[]],
             'multiTMinResults' : [[]],
             'nonInteractingLevels' : [ []],
-            'operatorRemovalChoice' : [[]],
+            'operatorsChoice' : [[]],
+            'multiTMaxFitsOpChoices' : [[]],
+            'multiTMinResultsOpChoices' : [[]],
             },
     'd' : { 'iso_name' : iso_map['d'][0],
             'iso_tag' : iso_map['d'][1],
@@ -323,7 +357,9 @@ ens_n101 = {
             'multiTMaxFits' : [[]],
             'multiTMinResults' : [[]],
             'nonInteractingLevels': [[]], 
-            'operatorRemovalChoice' : [[]],
+            'operatorsChoice' : [[]],
+            'multiTMaxFitsOpChoices' : [[]],
+            'multiTMinResultsOpChoices' : [[]],
             },
     't' : { 'iso_name' : iso_map['t'][0],
             'iso_tag' : iso_map['t'][1],
@@ -332,7 +368,9 @@ ens_n101 = {
             'multiTMaxFits': [[]],
             'multiTMinResults': [[]],
             'nonInteractingLevels': [[]], 
-            'operatorRemovalChoice' : [[]],
+            'operatorsChoice' : [[]],
+            'multiTMaxFitsOpChoices' : [[]],
+            'multiTMinResultsOpChoices' : [[]],
         },
     'q' : { 'iso_name' : iso_map['q'][0],
             'iso_tag' : iso_map['q'][1],
@@ -341,12 +379,14 @@ ens_n101 = {
             'multiTMaxFits': [[]],
             'multiTMinResults': [[]],
             'nonInteractingLevels': [[]], 
-            'operatorRemovalChoice' : [[]],
+            'operatorsChoice' : [[]],
+            'multiTMaxFitsOpChoices' : [[]],
+            'multiTMinResultsOpChoices' : [[]],
         },
     }
-
+    
 ens_n200 = {
-    'aLat' : np.float64(0.06426), # in fm
+    'aLat' : np.float64(0.064), # in fm 2211.03744
     'betaLat' : np.float64(3.55),
     'LatSize' : np.float64(48.),
     'ncfgs' : 1712,
@@ -366,7 +406,9 @@ ens_n200 = {
             'multiTMaxFits' : [[]],
             'multiTMinResults' : [[]],
             'nonInteractingLevels' : [ []],
-            'operatorRemovalChoice' : [[]],
+            'operatorsChoice' : [[]],
+            'multiTMaxFitsOpChoices' : [[]],
+            'multiTMinResultsOpChoices' : [[]],
             },
     'd' : { 'iso_name' : iso_map['d'][0],
             'iso_tag' : iso_map['d'][1],
@@ -375,7 +417,9 @@ ens_n200 = {
             'multiTMaxFits' : [[]],
             'multiTMinResults' : [[]],
             'nonInteractingLevels': [[]], 
-            'operatorRemovalChoice' : [[]],
+            'operatorsChoice' : [[]],
+            'multiTMaxFitsOpChoices' : [[]],
+            'multiTMinResultsOpChoices' : [[]],
             },
     't' : { 'iso_name' : iso_map['t'][0],
             'iso_tag' : iso_map['t'][1],
@@ -384,7 +428,9 @@ ens_n200 = {
             'multiTMaxFits': [[]],
             'multiTMinResults': [[]],
             'nonInteractingLevels': [[]], 
-            'operatorRemovalChoice' : [[]],
+            'operatorsChoice' : [[]],
+            'multiTMaxFitsOpChoices' : [[]],
+            'multiTMinResultsOpChoices' : [[]],
         },
     'q' : { 'iso_name' : iso_map['q'][0],
             'iso_tag' : iso_map['q'][1],
@@ -393,12 +439,14 @@ ens_n200 = {
             'multiTMaxFits': [[]],
             'multiTMinResults': [[]],
             'nonInteractingLevels': [[]], 
-            'operatorRemovalChoice' : [[]],
+            'operatorsChoice' : [[]],
+            'multiTMaxFitsOpChoices' : [[]],
+            'multiTMinResultsOpChoices' : [[]],
         },
     }
     
 ens_n201 = {
-    'aLat' : np.float64(0.0749), # in fm
+    'aLat' : np.float64(0.064), # in fm 2211.03744
     'betaLat' : np.float64(3.55),
     'LatSize' : np.float64(48.),
     'ncfgs' : 1522,
@@ -419,6 +467,8 @@ ens_n201 = {
             'multiTMinResults' : [[]],
             'nonInteractingLevels' : [ []],
             'operatorsChoice' : [[]],
+            'multiTMaxFitsOpChoices' : [[]],
+            'multiTMinResultsOpChoices' : [[]],
             },
     'd' : { 'iso_name' : iso_map['d'][0],
             'iso_tag' : iso_map['d'][1],
@@ -428,6 +478,8 @@ ens_n201 = {
             'multiTMinResults' : [[]],
             'nonInteractingLevels': [[]], 
             'operatorsChoice' : [[]],
+            'multiTMaxFitsOpChoices' : [[]],
+            'multiTMinResultsOpChoices' : [[]],
             },
     't' : { 'iso_name' : iso_map['t'][0],
             'iso_tag' : iso_map['t'][1],
@@ -437,6 +489,8 @@ ens_n201 = {
             'multiTMinResults': [[]],
             'nonInteractingLevels': [[]], 
             'operatorsChoice' : [[]],
+            'multiTMaxFitsOpChoices' : [[]],
+            'multiTMinResultsOpChoices' : [[]],
         },
     'q' : { 'iso_name' : iso_map['q'][0],
             'iso_tag' : iso_map['q'][1],
@@ -446,11 +500,13 @@ ens_n201 = {
             'multiTMinResults': [[]],
             'nonInteractingLevels': [[]], 
             'operatorsChoice' : [[]],
+            'multiTMaxFitsOpChoices' : [[]],
+            'multiTMinResultsOpChoices' : [[]],
         },
     }
 
 ens_n203 = {
-    'aLat' : np.float64(0.06426), # in fm
+    'aLat' : np.float64(0.064), # in fm 2211.03744
     'betaLat' : np.float64(3.55),
     'LatSize' : np.float64(48.),
     'ncfgs' : 1543,
@@ -470,7 +526,9 @@ ens_n203 = {
             'multiTMaxFits' : [[]],
             'multiTMinResults' : [[]],
             'nonInteractingLevels' : [ []],
-            'operatorsChoice' : [[]]
+            'operatorsChoice' : [[]],
+            'multiTMaxFitsOpChoices' : [[]],
+            'multiTMinResultsOpChoices' : [[]],
             },
     'd' : { 'iso_name' : iso_map['d'][0],
             'iso_tag' : iso_map['d'][1],
@@ -479,7 +537,9 @@ ens_n203 = {
             'multiTMaxFits' : [[]],
             'multiTMinResults' : [[]],
             'nonInteractingLevels': [[]], 
-            'operatorsChoice' : [[]]
+            'operatorsChoice' : [[]],
+            'multiTMaxFitsOpChoices' : [[]],
+            'multiTMinResultsOpChoices' : [[]],
             },
     't' : { 'iso_name' : iso_map['t'][0],
             'iso_tag' : iso_map['t'][1],
@@ -488,7 +548,9 @@ ens_n203 = {
             'multiTMaxFits': [[]],
             'multiTMinResults': [[]],
             'nonInteractingLevels': [[]], 
-            'operatorsChoice' : [[]]
+            'operatorsChoice' : [[]],
+            'multiTMaxFitsOpChoices' : [[]],
+            'multiTMinResultsOpChoices' : [[]],
         },
     'q' : { 'iso_name' : iso_map['q'][0],
             'iso_tag' : iso_map['q'][1],
@@ -497,10 +559,11 @@ ens_n203 = {
             'multiTMaxFits': [[]],
             'multiTMinResults': [[]],
             'nonInteractingLevels': [[]], 
-            'operatorsChoice' : [[]]
+            'operatorsChoice' : [[]],
+            'multiTMaxFitsOpChoices' : [[]],
+            'multiTMinResultsOpChoices' : [[]],
         },
     }
-
 
 ens_n451 = {
     'aLat' : np.float64(0.0749), # in fm
@@ -524,6 +587,8 @@ ens_n451 = {
             'multiTMinResults' : [[]],
             'nonInteractingLevels' : [ []],
             'operatorsChoice': [[]],
+            'multiTMaxFitsOpChoices' : [[]],
+            'multiTMinResultsOpChoices' : [[]],
             },
     'd' : { 'iso_name' : iso_map['d'][0],
             'iso_tag' : iso_map['d'][1],
@@ -533,6 +598,8 @@ ens_n451 = {
             'multiTMinResults' : [[]],
             'nonInteractingLevels': [ []],
             'operatorsChoice': [[]],
+            'multiTMaxFitsOpChoices' : [[]],
+            'multiTMinResultsOpChoices' : [[]],
             },
     't' : { 'iso_name' : iso_map['t'][0],
             'iso_tag' : iso_map['t'][1],
@@ -542,6 +609,8 @@ ens_n451 = {
             'multiTMinResults' : [[]],
             'nonInteractingLevels' : [ []],
             'operatorsChoice': [[]],
+            'multiTMaxFitsOpChoices' : [[]],
+            'multiTMinResultsOpChoices' : [[]],
             },
     'q' : { 'iso_name' : iso_map['q'][0],
             'iso_tag' : iso_map['q'][1],
@@ -551,13 +620,15 @@ ens_n451 = {
             'multiTMinResults': [[]],
             'nonInteractingLevels': [[]],
             'operatorsChoice': [[]],
+            'multiTMaxFitsOpChoices' : [[]],
+            'multiTMinResultsOpChoices' : [[]],
          },
     }
 
 ens_x451 = {
     'aLat' : np.float64(0.0633), # in fm
     'betaLat' : np.float64(3.55),
-    'LatSize' : np.float64(64.),
+    'LatSize' : np.float64(40.),
     'ncfgs' : 2026,
     'allConfigs': False,
     'nfgsList': np.sort(np.concatenate([np.arange(7,393,16),np.arange(175,895,16),np.arange(911,1903,16),np.arange(1919,1952,16)])),
@@ -576,7 +647,7 @@ ens_x451 = {
             'iso_tag' : iso_map['s'][1],
             'iso_label' : iso_map['s'][2],
             'fm' : f'{location}/data/X451/cls21_X451_r001_{iso_map['s'][1]}_Sm1_fwd_135_cnfgs.hdf5',
-            'multiTMaxFits' : [[]],
+            'multiTMaxFits' : [[25]*5, [25]*8, [25]*3, [25]*3, [25]*13, [25]*15, [25]*2, [25]*2, [25]*14],
             'multiTMinResults' : [[12,12,13,15,15],
                           [15,15,15,14,13,14,13,14],
                           [13,14,12],
@@ -597,7 +668,9 @@ ens_x451 = {
                                   ['K(0)N(3)', 'P(0)S(3)', 'K(1)N(2)', 'P(1)S(2)'], # P3_G
                                   ['K(0)N(3)', 'P(0)S(3)', 'K(1)N(2)', 'P(1)S(2)'], # P3_F1
                                   ['K(0)N(3)', 'P(0)S(3)', 'K(1)N(2)', 'P(1)S(2)']], # P3_F2
-            'operatorsChoice': [[]],
+            'operatorsChoice': [[0,3,4], [], [], [], [0,1,2,3,9,10,11,12], [0,1,2,3,9,10,11,12,13,14], [], [], [0,1,2,3,9,10,11,12,13]],
+            'multiTMaxFitsOpChoices' : [[25]*3, [25]*8, [25]*3, [25]*3, [25]*8, [25]*10, [25]*2, [25]*2, [25]*9],
+            'multiTMinResultsOpChoices' : [[]],
             },
     'd' : { 'iso_name' : iso_map['d'][0],
             'iso_tag' : iso_map['d'][1],
@@ -627,6 +700,8 @@ ens_x451 = {
                                   ['K(1)L(2)', 'P(1)S(2)'], # P3_F2
                                   ['K(0)S(4)', 'K(0)L(4)', 'P(0)X(4)', 'K(1)S(1)', 'K(1)L(1)','P(1)X(1)']], # P4_G1 # The last ones are summed mom
             'operatorsChoice': [[]],
+            'multiTMaxFitsOpChoices' : [[]],
+            'multiTMinResultsOpChoices' : [[]],
             },
     't' : { 'iso_name' : iso_map['t'][0],
             'iso_tag' : iso_map['t'][1],
@@ -636,6 +711,8 @@ ens_x451 = {
             'multiTMinResults' : [[]],
             'nonInteractingLevels' : [ []],
             'operatorsChoice': [[]],
+            'multiTMaxFitsOpChoices' : [[]],
+            'multiTMinResultsOpChoices' : [[]],
             },
     'q' : { 'iso_name' : iso_map['q'][0],
             'iso_tag' : iso_map['q'][1],
@@ -645,10 +722,11 @@ ens_x451 = {
             'multiTMinResults': [[]],
             'nonInteractingLevels': [[]],
             'operatorsChoice': [[]],
+            'multiTMaxFitsOpChoices' : [[]],
+            'multiTMinResultsOpChoices' : [[]],
         },
     }
     
-
 ensembles = {
     'A654': ens_a654,
     'D200': ens_d200,

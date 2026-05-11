@@ -701,8 +701,8 @@ def SORTING_EIGENVALUES_NEW(the_eigenvals, the_eigenvecs, the_t0 = 0):
     the_final_eigenvecs = []
     for ii in range(len(the_eigenvals)):
         the_sorted_indices = sorted(range(len(the_eigenvals[ii])), key=lambda i: the_eigenvals[ii][i], reverse=True)
-        the_final_eigens.append(np.array([the_eigenvals[ii][i] for i in the_sorted_indices]))
-        the_final_eigenvecs.append(np.array([the_eigenvecs[ii][i] for i in the_sorted_indices]))
+        the_final_eigens.append(np.asarray([the_eigenvals[ii][i] for i in the_sorted_indices]))
+        the_final_eigenvecs.append(np.asarray([the_eigenvecs[ii][i] for i in the_sorted_indices]))
     return [the_final_eigens, the_final_eigenvecs]
 
 
@@ -1124,25 +1124,6 @@ def REWEIGHTED_CORR(da_corr, rw):
 
 # rw: list of reweighting factors [Ncfgs]
 # it returns a list with the normalized reweighting factors
-# def REWEIGHTS(the_rw_list, the_nfs):
-#     if len(the_rw_list)==1:
-#         if 'dat_ascii' in the_rw_list[0]:
-#             the_weight = np.asarray(np.loadtxt(the_rw_list[0], unpack=True)[1])
-#         elif 'rw.dat' in the_rw_list[0]:
-#             the_pre_weight = np.asarray(np.loadtxt(the_rw_list[0], unpack=True))
-#             the_weight = np.asarray([the_pre_weight[1][jj] * the_pre_weight[2][jj] for jj in range(len(the_pre_weight[0]))])
-#         else:
-#             print('Error: Please check name reweighting factors file.')
-#     else:
-#         if 'r000' in the_rw_list[0] and 'r001' in the_rw_list[1]:
-#             the_weight = np.concatenate((np.loadtxt(the_rw_list[0], unpack=True)[1], np.loadtxt(the_rw_list[1], unpack=True)[1]), axis=0)
-#         else:
-#             the_pre_weight_1 = np.asarray(np.loadtxt(the_rw_list[0], unpack=True)[1])
-#             the_pre_weight_2 = np.asarray(np.loadtxt(the_rw_list[1], unpack=True)[1])
-#             the_weight = np.asarray([the_pre_weight_1[jj] * the_pre_weight_2[jj] for jj in range(len(the_pre_weight_1))])
-#     return RW_NORMALIZATION(the_weight, the_nfs)
-
-
 def REWEIGHTS(the_rw_list, the_nfs):
     def process_file(the_file):
         data = np.loadtxt(the_file, unpack=True)
@@ -1428,14 +1409,14 @@ class My_Fits_Update:
 def DOING_THE_FITTING(the_corr, the_nt, the_type_rs, the_irreps, the_irrep, tmin_data, the_type_correlated_fit, the_type_fit, the_only_one_tmin, the_t0, the_list_tmaxs, da_minimization, the_fit_params):
     
     ### Loop over all the t0 chosen
-    the_corr_fit = np.array(the_corr.get('Eigenvalues/Mean')).real 
-    the_corr_fit_rs = np.array(the_corr.get('Eigenvalues/Resampled')).real 
+    the_corr_fit = np.asarray(the_corr['Eigenvalues/Mean']).real 
+    the_corr_fit_rs = np.asarray(the_corr['Eigenvalues/Resampled']).real 
     
     ### Retrieving the covariance matrix for the fits
-    the_cov_matrix = np.array(the_corr.get('Eigenvalues/Covariance_matrix')).real 
+    the_cov_matrix = np.asarray(the_corr['Eigenvalues/Covariance_matrix']).real 
     
     ### Effective Masses are used as a prior
-    the_eff_energy_hint = np.array(the_corr.get('Effective_masses/Mean'))
+    the_eff_energy_hint = np.asarray(the_corr['Effective_masses/Mean'])
     
     ### Creating a folder for correlated or uncorrelated fits
     if the_type_correlated_fit=='Correlated':
@@ -1457,7 +1438,6 @@ def DOING_THE_FITTING(the_corr, the_nt, the_type_rs, the_irreps, the_irrep, tmin
         ### This is the modified time range to go from item 0 until the end without caring about labeling
         nt_mod = np.arange(0,len(the_nt))
         if the_only_one_tmin: 
-            
             ### Upper limit for the fit
             the_ul = [x-the_nt[0] for x in the_list_tmaxs[the_irreps.index(the_irrep)]]
             
@@ -1470,44 +1450,44 @@ def DOING_THE_FITTING(the_corr, the_nt, the_type_rs, the_irreps, the_irrep, tmin
             ### Lower limit for the fit depends on the upper limit
             # the_ll = np.arange(nt_mod[0]+1, int(the_ul[ls]*(.8 - (0.025*ls))))
             the_ll = np.arange(nt_mod[0]+1, int(nt_mod[-1]*.75))
-        
+            
         ### Choosing the covariance matrix depending on the type of correlated fit
         if the_type_correlated_fit=='Correlated':
             the_cov_matrix_fit = the_cov_matrix[ls]
         elif the_type_correlated_fit=='Uncorrelated':
-            the_cov_matrix_fit = np.zeros((len(the_cov_matrix[ls]), len(the_cov_matrix[ls])))
-            np.fill_diagonal(the_cov_matrix_fit, np.diag(the_cov_matrix[ls]))  
+            the_cov_matrix_fit = np.diag(np.diag(the_cov_matrix[ls]))        
         
-        
-        the_energies_list, the_sigmas_list, the_chi_vals_list, the_sigmas_chi_list = [], [], [], []
+        # the_energies_list, the_sigmas_list, the_chi_vals_list, the_sigmas_chi_list = [], [], [], []
         another_list = []
+        
+        the_results = {'the_energies': [], 'the_sigmas': [], 'the_chi_vals': [], 'the_sigmas_chi': [], 'the_resampled': []}
+        
         ### Loop over all the tmins
         for yy in the_ll:
-            print('Tmin = ' + str(yy+the_nt[0]) + '|| TMax = %s'%(the_ul[ls]+the_nt[0]))
+            print(f'Tmin = {yy+the_nt[0]}  || TMax = {the_ul[ls]+the_nt[0]}')
             another_useful_list = []
             
+            the_nt_slice = the_nt[yy:the_ul[ls]]
+            the_corr_fit_slice = the_corr_fit[ls,yy:the_ul[ls]]
+            
             ### This is finding a good guess to make the fit converge easier.
-            da_hint = BEST_GUESS(the_corr_fit[ls][yy:the_ul[ls]], the_nt[yy:the_ul[ls]], the_type_fit) 
+            da_hint = BEST_GUESS(the_corr_fit_slice, the_nt_slice, the_type_fit) 
             if False in np.isnan(da_hint):
                 the_dof = da_hint
             else: 
                 the_dof = np.zeros((1,len(da_hint)));
                 the_dof = the_dof[0]
                 the_dof[0] = np.float64(0.1)
-                the_dof[1] = np.float64(the_eff_energy_hint[ls][yy])
+                the_dof[1] = np.float64(the_eff_energy_hint[ls,yy])
             
-            ### Reduces the covariance matrix to the size of the time range chosen
-            the_small_cov = SHRINK_MATRIX(the_cov_matrix_fit, yy, the_ul[ls])
-            the_sigma_matrix = np.array(the_small_cov, dtype=np.float64)
-            
-            ### This takes the inverse of the covariance matrix
-            the_inverse_cov_m = np.linalg.inv(the_sigma_matrix)
+            ### Reduces the covariance matrix to the size of the time range chosen and takes the inverse            
+            the_inverse_cov_m = np.linalg.inv(SHRINK_MATRIX(the_cov_matrix_fit, yy, the_ul[ls]))
             
             ### This chooses the fit function to use 
-            the_fit_choice = My_Fits(da_minimization, the_nt[yy:the_ul[ls]], the_corr_fit[ls][yy:the_ul[ls]], the_inverse_cov_m, the_dof, np.float64(the_t0))
+            the_fit_choice = My_Fits(da_minimization, the_nt_slice, the_corr_fit_slice, the_inverse_cov_m, the_dof, np.float64(the_t0))
             
             ### Fitting started
-            the_fit = Minuit(the_fit_choice, the_dof, name=the_fit_params)
+            the_fit = Minuit(the_fit_choice, the_dof, name = the_fit_params)
             
             the_fit.errordef, the_fit.tol = 1e-8, 1e-10
             the_fit.scan()
@@ -1520,14 +1500,19 @@ def DOING_THE_FITTING(the_corr, the_nt, the_type_rs, the_irreps, the_irrep, tmin
             the_dof_rs = the_dof
             the_dof_rs[0], the_dof_rs[1] = np.float64(the_fit.values['a0']), e0
             
-            the_energies_list.append(e0); the_chi_vals_list.append(np.float64(the_fit.fval)); another_useful_list.append(e0)
+            # the_energies_list.append(e0); the_chi_vals_list.append(np.float64(the_fit.fval));
+            another_useful_list.append(e0)
             
-            zz=0
+            the_results['the_energies'].append(e0)
+            the_results['the_chi_vals'].append(the_fit.fval)
+            
+            # zz=0
             chi_vals_rs_list = []
+            the_corr_fit_rs_eigen = the_corr_fit_rs[ls]
             ### Loop over the resamples
             for zz in range(the_corr_fit_rs.shape[1]):
-                my_fit_choice_rs = My_Fits(da_minimization, the_nt[yy:the_ul[ls]], the_corr_fit_rs[ls][zz][yy:the_ul[ls]], the_inverse_cov_m, the_dof_rs, np.float64(the_t0))
-                the_fit_rs = Minuit(my_fit_choice_rs, the_dof_rs, name=the_fit_params)
+                my_fit_choice_rs = My_Fits(da_minimization, the_nt_slice, the_corr_fit_rs_eigen[zz,yy:the_ul[ls]], the_inverse_cov_m, the_dof_rs, np.float64(the_t0))
+                the_fit_rs = Minuit(my_fit_choice_rs, the_dof_rs, name = the_fit_params)
                 
                 the_fit_rs.errordef, the_fit_rs.tol = 1e-8, 1e-7
                 the_fit_rs.scan()
@@ -1539,11 +1524,15 @@ def DOING_THE_FITTING(the_corr, the_nt, the_type_rs, the_irreps, the_irrep, tmin
             sigma_fit_rs = STD_DEV(another_useful_list[1:], np.mean(another_useful_list[1:]), the_type_rs)
             sigma_chi_rs = STD_DEV(chi_vals_rs_list, np.mean(chi_vals_rs_list), the_type_rs)
             
-            the_sigmas_list.append(sigma_fit_rs); the_sigmas_chi_list.append(sigma_chi_rs); another_list.append(np.array(another_useful_list))
+            # the_sigmas_list.append(sigma_fit_rs); the_sigmas_chi_list.append(sigma_chi_rs);
+            another_list.append(np.array(another_useful_list))
+            
+            the_results['the_sigmas'].append(sigma_fit_rs)
+            the_results['the_sigmas_chi'].append(sigma_chi_rs)
         print('E = %s READY'%ls)    
         
         the_rs_data.create_dataset('lambda_%s'%ls, data=np.array(another_list))
-        the_mean_data.create_dataset('lambda_%s'%ls, data =np.array([the_ll + the_nt[0], [the_ul[ls]+the_nt[0]]*len(the_ll), the_energies_list, the_sigmas_list, the_chi_vals_list, the_sigmas_chi_list]))    
+        the_mean_data.create_dataset('lambda_%s'%ls, data = np.array([the_ll + the_nt[0], [the_ul[ls]+the_nt[0]]*len(the_ll), the_results['the_energies'], the_results['the_sigmas'], the_results['the_chi_vals'], the_results['the_sigmas_chi']]))    
         
         
 
