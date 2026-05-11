@@ -14,20 +14,23 @@ class GEVPRuns:
     rs_sorting: Optional[str] = None
     td: Optional[int] = None
     
+
 @dataclass
 class OperatorRuns:
-    method: str = 'from_list' # 'adding' # 'removing' # 'from_list'
-    ops_list: Optional[list] = None
+    t0min: Optional[int] = None
+    t0max: Optional[int] = None
+    sorting: str = "eigenvals" #'vecs_fix' #'eigenvals' # 'vecs_fix' # 'vecs_fix_norm' # 'vecs_var' # 'vecs_var_norm'
+    rs_sorting: Optional[str] = None
+    ops_list: list = None
 
 
 @dataclass
 class FitRuns:
     type_fit: str = '1' #'1' #'2' #'g'
-    # t0: int = 4
+    t0: int = 4
     type_correlation: str = 'Correlated' # 'Uncorrelated'
     one_tmin: bool = True # False
     one_t0: bool = True # False
-    gevp_flag: bool = True
 
 
 @dataclass
@@ -36,7 +39,7 @@ class BinRuns:
     fit_range: Tuple[int, int] = (22, 36)
     chosen_bin: int = 5
     
-
+    
 @dataclass
 class DispRuns:
     mode: str = "both"  # abs / rel / both
@@ -60,7 +63,7 @@ class Runs:
     rebin: bool
     rb: int
     
-    ### Flags
+    ### What to do 
     corrs: bool
     eigenvals: bool
     effmass: bool
@@ -70,19 +73,25 @@ class Runs:
     ops: bool
     binning: bool
 
-    ### Suboptions deriving from flags
+    ### Subflags deriving from the main tasks
     fit: FitRuns
     gevp: GEVPRuns
     binning_run: BinRuns
     disp_run: DispRuns
     ops_run: OperatorRuns    
     
+    ### These variables have a default setting
     kbt: int 
     dist_eff_mass: int
-    diag_corr: bool
     
+    ### These are intended to differentiate between the main set of correlators and the reduced set when obtianing the eff masses and performing the fits
+    ops_flag: bool
+    gevp_flag: bool
+    
+    ### Getting the irreps if not all are wanted
     the_irreps: NrIrreps
     
+
 import argparse
 ### Comments:
 # this function allows you to put all inputs in the terminal as variables. Easier for the amount of variables we have
@@ -106,8 +115,8 @@ def parse_args():
     parser.add_argument("--eigenvals", action="store_true") # GEVP
     parser.add_argument("--effmass", action="store_true") # Effective masses
     parser.add_argument("--fits", action="store_true") # Fitting procedure
-    parser.add_argument("--disp", action="store_true") # Dispersion relations
-    parser.add_argument("--corrdiff", action="store_true") # Correlated differences
+    parser.add_argument("--disp-rel", action="store_true") # Dispersion relations
+    parser.add_argument("--corr-diff", action="store_true") # Correlated differences
     parser.add_argument("--ops", action="store_true") # Operator analysis
     parser.add_argument("--binning", action="store_true") # Binning analysis
     
@@ -119,12 +128,15 @@ def parse_args():
     parser.add_argument("--disp-mode", default="both", choices=["abs", "rel", "both"])
     
     ### These are for the effective masses
-    parser.add_argument("--diag-corr", action="store_true")
+    parser.add_argument("--ops-flag", action="store_true")
     parser.add_argument("--gevp-flag", action="store_true")
+    
     parser.add_argument("--dist-eff-mass", type=int, default=1)
     
     ### Fit params 
-    parser.add_argument("--fit-type", choices=["1", "2", "g"])
+    parser.add_argument("--fit-type", choices=["1", "2", "g"], default="1")
+    parser.add_argument("--fit-correlation", choices=["Correlated", "Uncorrelated"], default="Correlated")
+    parser.add_argument("--fit-t0", default=4)
     
     ### These is for the Bootstrap
     parser.add_argument("-kbt", "--k-bootstrap", type=int, default=500) # resampling schemes
@@ -133,44 +145,47 @@ def parse_args():
     parser.add_argument("-fi", "--start-irrep", type=int)
     parser.add_argument("-li","--last-irrep", type=int)
     parser.add_argument("-ir","--nr-irreps", type=int)
-
+    
     return parser.parse_args()
 
 
 ### Commments:
 # This function checks if all the needed parameters were included before running anything
 def VALIDATE_RUNS(r: Runs):
+    if r.correlator in ("m", "mr") and r.isospin is None:
+         raise ValueError("Multihadron analysis requires -i or --isospin.")
+     
     if r.eigenvals or r.ops:
         if r.gevp.t0min is None or r.gevp.t0max is None:
             raise ValueError("GEVP/OPS requires --t0min and --t0max")
 
-    if r.binning:
-        if r.binning_run is None:
-            raise ValueError("Binning requires binning config")
+    if r.binning and r.binning_run is None:
+        raise ValueError("Binning requires binning config")
 
-    if r.disp:
-        if r.disp_run is None:
-            raise ValueError("Plotting dispersion mode missing --disp-mode")
+    if r.disp and r.disp_run is None:
+        raise ValueError("Plotting dispersion mode missing --disp-mode")
     
-    if r.fits and r.fit.type_fit is None:
-        raise ValueError("Fits require --fit-type")
     
-    if r.correlator in ("m", "mr") and r.isospin is None:
-         raise ValueError("Isospin -i or --isospin is required for multi-hadron or ratio analysis")
 
 ### Comments:
 # This routine selects which runs to do, for example the corrs, the effective masses, etc.
 def WhichRuns(args, the_ensemble_data):
-    fit_run = FitRuns(type_fit = args.fit_type if args.fits else "1")
-    gevp_run = GEVPRuns(t0min=args.t0min if (args.eigenvals or args.ops) else None,t0max=args.t0max if (args.eigenvals or args.ops) else None,)
-    bin_run = BinRuns()
-    disp_run = DispRuns(mode=args.disp_mode if args.disp else "both")
-
-    ops_run = OperatorRuns(method = "from_list", ops_list = the_ensemble_data.get("operatorsChoice", None))
-    kbt = args.k_bootstrap if args.rs_type == "bt" else 500
-    diag_corr = args.diag_corr
-    dist_eff_mass = args.dist_eff_mass
     
+    ### Fit parameters
+    fit_run = FitRuns(type_fit = args.fit_type if args.fits else "1", type_correlation = args.fit_correlation, t0=args.fit_t0)
+    
+    ### GEVP Parameters
+    gevp_run = GEVPRuns(t0min=args.t0min if (args.eigenvals or args.ops) else None,t0max=args.t0max if (args.eigenvals or args.ops) else None,)
+    ops_run = OperatorRuns(t0min=args.t0min if (args.eigenvals or args.ops) else None,t0max=args.t0max if (args.eigenvals or args.ops) else None, ops_list = the_ensemble_data.get("operatorsChoice", None))
+    
+    ### Other analyses
+    bin_run = BinRuns()
+    disp_run = DispRuns(mode=args.disp_mode if args.disp_rel else "both")
+
+    ### Bootstrap parameters
+    kbt = args.k_bootstrap if args.rs_type == "bt" else 500
+    
+    ### Which irreps to run
     the_irreps = NrIrreps(first_irrep = args.start_irrep if args.start_irrep else None, last_irrep = args.last_irrep if args.last_irrep else None, nr_irreps =  args.nr_irreps if args.nr_irreps else None, steps = 1)
 
     return Runs(
@@ -186,20 +201,22 @@ def WhichRuns(args, the_ensemble_data):
         eigenvals=args.eigenvals,
         effmass=args.effmass,
         fits=args.fits,
-        disp=args.disp,
-        corrdiff=args.corrdiff,
+        disp=args.disp_rel,
+        corrdiff=args.corr_diff,
         ops=args.ops,
         binning=args.binning,
 
         fit=fit_run,
         gevp=gevp_run,
+        ops_run=ops_run,
         binning_run=bin_run,
         disp_run=disp_run,
-        ops_run=ops_run,
         
-        kbt =kbt, 
-        diag_corr = diag_corr,
-        dist_eff_mass = dist_eff_mass,
+        kbt=kbt, 
+        dist_eff_mass=args.dist_eff_mass,
+        
+        gevp_flag=args.gevp_flag,
+        ops_flag=args.ops_flag,
         
         the_irreps = the_irreps,
         )
@@ -309,9 +326,16 @@ def IRREP_OP_INFO_PRINTING(the_new_archivo):
         # Print separation between blocks
         print()  # Blank line for spacing
         
-        
-        
 
+### Comments:
+# this functions creates a data set if it doesn exist, or it replaces if it exists
+def REPLACE_DATASET(the_group, the_name, the_data):
+    if the_name in the_group:
+        del the_group[the_name]
+    the_group.create_dataset(the_name, data=the_data)
+        
+        
+        
 ### Comments:
 # Prints the index and the name of the irrep in the file and reminds one to choose a rest frame irrep
 def IRREP_BIN_SIZE_INFO_PRINTING(the_irreps):
