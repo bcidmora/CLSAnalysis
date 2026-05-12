@@ -388,7 +388,7 @@ def MultiCorrelatorAnalysisRatios(the_multi_hadrons_archivo, the_single_hadrons_
         
         ### Printing some information in screen
         print('\n--------------------------------------------------------------------------------------')
-        print(f'-->   IRREP({the_m_irreps.index(the_irrep)+1}/{len(the_m_irreps)}): {the_irrep}')
+        print(f'-->  IRREP({the_m_irreps.index(the_irrep)+1}/{len(the_m_irreps)}): {the_irrep}')
         print(f'     Size Matrix: {the_size_matrix}x{the_size_matrix}')
         print(f'     OPERATORS LIST \n----------------------------------------------')
         for ii in range(the_size_matrix):

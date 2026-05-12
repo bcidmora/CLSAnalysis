@@ -185,7 +185,8 @@ def FitSingleCorrelators(the_data, the_fit_data, the_type_rs, the_list_tmaxs, th
 def FitSingleCorrelatorsIB(the_data, the_fit_data, the_type_rs, the_list_tmaxs, the_irreps, **kwargs): 
     
     the_fit_map_ib = {'1': {"iso": {"n_params": 2, "model": vfa.SINGLE_EXPONENTIAL, "params": ('a0', 'e0'), "label": "Single Exponential Fit"},
-                            "ib": {"n_params": 4, "model": vfa.SINGLE_EXP_CORRECTIONS_IB, "params": ('a0', 'e0', 'a1', 'e1')}},
+                            # "ib": {"n_params": 4, "model": vfa.SINGLE_EXP_CORRECTIONS_IB, "params": ('a0', 'e0', 'a1', 'e1')}},
+                            "ib": {"n_params": 2, "model": vfa.SINGLE_EXP_CORRECTIONS_IB, "params": ('a1', 'e1')}},
                       '2': {"iso": {"n_params": 4, "model": vfa.DOUBLE_EXPONENTIAL_IB, "params": ('a0', 'e0', 'r', 'de'), "label": "Double Exponential Fit"},
                             "ib": {"n_params": 8, "model": vfa.DOUBLE_EXP_CORRECTIONS_IB, "params": ('a0', 'e0', 'r', 'de', 'da0', 'de0', 'dr', 'dde')}}}    
     ### The type of fit
@@ -256,14 +257,16 @@ def FitSingleCorrelatorsIB(the_data, the_fit_data, the_type_rs, the_list_tmaxs, 
         
         ### Checking is the isosymmetric or the ib part. If ib, then it avoids the division by zero.
         if not is_iso:
-            the_mask = np.abs(the_iso_corr) > 1e-14
-            the_mask_rs = np.abs(the_iso_corr_rs) > 1e-14
-            the_corr_fit = np.divide(the_corr_fit, the_iso_corr, out=np.zeros_like(the_corr_fit), where=the_mask)
-            the_corr_fit_rs = np.divide(the_corr_fit_rs, the_iso_corr_rs, out=np.zeros_like(the_corr_fit_rs), where=the_mask_rs)
+            the_corr_fit = the_corr_fit / the_iso_corr
+            the_corr_fit_rs = the_corr_fit_rs / the_iso_corr_rs
+            # the_mask = np.abs(the_iso_corr) > 1e-14
+            # the_mask_rs = np.abs(the_iso_corr_rs) > 1e-14
+            # the_corr_fit = np.divide(the_corr_fit, the_iso_corr, out=np.zeros_like(the_corr_fit), where=the_mask)
+            # the_corr_fit_rs = np.divide(the_corr_fit_rs, the_iso_corr_rs, out=np.zeros_like(the_corr_fit_rs), where=the_mask_rs)
         
         ### Checking the tmin and tmax variables
         the_ul = int(the_list_tmaxs[irrep_idx]) - the_nt[0]
-        the_ll = np.arange(0, int(the_ul * 0.85))
+        the_ll = np.arange(2, int(the_ul * 0.85))
     
         if type_correlated_fit == 'Correlated':
             the_cov_matrix_fit = the_cov_matrix
@@ -613,13 +616,11 @@ def FitRatioMultiCorrelators(the_data, the_fit_data, the_type_rs, the_list_tmaxs
                         
                         ### Upper limit for the fit
                         the_ul = [x-the_nt[0] for x in the_list_tmaxs[the_irreps.index(the_irrep)]]
-                        
                         ### Lower limit for the fit
                         the_ll = [nt_mod[5]]                    
                     else: 
                         ### Upper limir for the fit
                         the_ul = [x-the_nt[0] for x in the_list_tmaxs[the_irreps.index(the_irrep)]]
-                        
                         ### Lower limit for the fit depends on the upper limit
                         # the_ll = np.arange(nt_mod[0]+1, int(the_ul[ls]*(.8 - (0.025*ls))))
                         the_ll = np.arange(nt_mod[0]+1, int(nt_mod[-1]*.75))
@@ -630,37 +631,41 @@ def FitRatioMultiCorrelators(the_data, the_fit_data, the_type_rs, the_list_tmaxs
                     elif the_type_correlated_fit=='Uncorrelated':
                         the_cov_matrix_fit = np.diag(np.diag(the_cov_matrix[ls,nn]))          
                     
-                    
-                    # the_energies_list, the_sigmas_list, the_chi_vals_list, the_sigmas_chi_list = [], [], [], []
                     the_results = {'the_energies': [], 'the_sigmas': [], 'the_chi_vals': [], 'the_sigmas_chi': [], 'the_resampled': []}
                     another_list = []
+                    
+                    the_corr_fit_slice = the_corr_fit[ls,nn]
+                    the_corr_fit_rs_slice = the_corr_fit_rs[ls,nn]                    
+                    
                     ### Loop over all the tmins
                     for yy in the_ll:
                         print('Tmin = ' + str(yy+the_nt[0]) + '|| TMax = %s'%(the_ul[ls]+the_nt[0]))
                         another_useful_list = []
                         
                         ### This is finding a good guess to make the fit converge easier.
-                        da_hint = vfa.BEST_GUESS(the_corr_fit[ls,nn][yy:the_ul[ls]], the_nt[yy:the_ul[ls]], the_type_fit) 
+                        da_hint = vfa.BEST_GUESS(the_corr_fit_slice[yy:the_ul[ls]], the_nt[yy:the_ul[ls]], the_type_fit) 
                         if False in np.isnan(da_hint):
                             the_dof = da_hint
                         else: 
                             the_dof = np.zeros((1,len(da_hint)));
                             the_dof = the_dof[0]
                             the_dof[0] = np.float64(0.1)
-                            the_dof[1] = np.float64(the_eff_energy_hint[ls,nn][yy])
+                            the_dof[1] = np.float64(the_eff_energy_hint[ls,nn,yy])
                         
                         ### Reduces the covariance matrix to the size of the time range chosen
-                        the_small_cov = vfa.SHRINK_MATRIX(the_cov_matrix_fit, yy, the_ul[ls])
-                        the_sigma_matrix = np.array(the_small_cov, dtype=np.float64)
+                        # the_small_cov = vfa.SHRINK_MATRIX(the_cov_matrix_fit, yy, the_ul[ls])
+                        # the_sigma_matrix = np.array(the_small_cov, dtype=np.float64)
                         
                         ### This takes the inverse of the covariance matrix
-                        the_inverse_cov_m = np.linalg.inv(the_sigma_matrix)
+                        # the_inverse_cov_m = np.linalg.inv(the_sigma_matrix)
+                        
+                        the_inverse_cov_m = np.linalg.inv(vfa.SHRINK_MATRIX(the_cov_matrix_fit, yy, the_ul[ls]))
                         
                         ### This chooses the fit function to use 
-                        the_fit_choice = vfa.My_Fits(da_minimization, the_nt[yy:the_ul[ls]], the_corr_fit[ls,nn][yy:the_ul[ls]], the_inverse_cov_m, the_dof, np.float64(the_t0))
+                        the_fit_choice = vfa.My_Fits(da_minimization, the_nt[yy:the_ul[ls]], the_corr_fit_slice[yy:the_ul[ls]], the_inverse_cov_m, the_dof, np.float64(the_t0))
                         
                         ### Fitting started
-                        the_fit = Minuit(the_fit_choice, the_dof, name=the_fit_params)
+                        the_fit = Minuit(the_fit_choice, the_dof, name = the_fit_params)
                         
                         the_fit.errordef, the_fit.tol = 1e-8, 1e-10
                         the_fit.scan()
@@ -678,11 +683,11 @@ def FitRatioMultiCorrelators(the_data, the_fit_data, the_type_rs, the_list_tmaxs
                         the_results['the_energies'].append(e0)
                         the_results['the_chi_vals'].append(np.float64(the_fit.fval))
                         
-                        zz=0
+                        # zz=0
                         chi_vals_rs_list = []
                         ### Loop over the resamples
                         for zz in range(the_corr_fit_rs.shape[2]):
-                            my_fit_choice_rs = vfa.My_Fits(da_minimization, the_nt[yy:the_ul[ls]], the_corr_fit_rs[ls, nn, zz, yy:the_ul[ls]], the_inverse_cov_m, the_dof_rs, np.float64(the_t0))
+                            my_fit_choice_rs = vfa.My_Fits(da_minimization, the_nt[yy:the_ul[ls]], the_corr_fit_rs_slice[zz, yy:the_ul[ls]], the_inverse_cov_m, the_dof_rs, np.float64(the_t0))
                             the_fit_rs = Minuit(my_fit_choice_rs, the_dof_rs, name=the_fit_params)
                             
                             the_fit_rs.errordef, the_fit_rs.tol = 1e-8, 1e-7
@@ -695,23 +700,20 @@ def FitRatioMultiCorrelators(the_data, the_fit_data, the_type_rs, the_list_tmaxs
                         sigma_fit_rs = vfa.STD_DEV(another_useful_list[1:], np.mean(another_useful_list[1:]), the_type_rs)
                         sigma_chi_rs = vfa.STD_DEV(chi_vals_rs_list, np.mean(chi_vals_rs_list), the_type_rs)
                         
-                        the_sigmas_list.append(sigma_fit_rs); the_sigmas_chi_list.append(sigma_chi_rs); another_list.append(np.array(another_useful_list))
-                    print('E = %s READY'%ls)    
-                    
-                    # inside both loops
+                        # the_sigmas_list.append(sigma_fit_rs); the_sigmas_chi_list.append(sigma_chi_rs);
+                        the_results['the_sigmas'].append(sigma_fit_rs)
+                        the_results['the_sigmas_chi'].append(sigma_chi_rs)
+                        another_list.append(np.array(another_useful_list))
+                    print(f'E = {ls} READY')    
+
                     lambda_group_name = f"lambda_{ls}_nonint_{nn}"
 
-                    the_rs_data.create_dataset(lambda_group_name, data=np.array(another_list))
-                    the_mean_data.create_dataset(lambda_group_name,data=np.array([the_ll + the_nt[0],                                    [the_ul[ls]+the_nt[0]]*len(the_ll),the_results['the_energies'],the_sigmas_list, the_results['the_chi_vals'],the_sigmas_chi_list]))
-    
-                    # the_rs_data.create_dataset('lambda_%s'%ls, data=np.array(another_list))
-                    # the_mean_data.create_dataset('lambda_%s'%ls, data =np.array([the_ll + the_nt[0], [the_ul[ls]+the_nt[0]]*len(the_ll), the_energies_list, the_sigmas_list, the_chi_vals_list, the_sigmas_chi_list]))         
+                    the_rs_data.create_dataset(lambda_group_name, data = np.asarray(another_list))
+                    the_mean_data.create_dataset(lambda_group_name, data = np.asarray([the_ll + the_nt[0],                                    [the_ul[ls]+the_nt[0]]*len(the_ll), the_results['the_energies'], the_results['the_sigmas'], the_results['the_chi_vals'], the_results['the_sigmas_chi']]))                    
                     
-                    
-                end_time_tmin=time.time()
-                print('Time taken: ' + str(round((end_time_tmin-begin_time_tmin)/60,2))+' min')
-                print('Minimization %s exp: E vs Tmin DONE!'%the_type_fit)
-                # print('Minimization %s exp: E vs Tmin DONE!'%the_string_fit)
+                end_time_tmin = time.time()
+                print(f'Time taken: {round((end_time_tmin-begin_time_tmin)/60,2)} min')
+                print(f'Minimization {the_type_fit} exp: E vs Tmin DONE!')
             
 
 if __name__=="__main__":

@@ -21,13 +21,11 @@ def RANDOM_GENERATOR(k_size, cfgs_nr):
     return np.random.randint(0, cfgs_nr, size=(k_size, cfgs_nr))
 
 
-
 # It receives a list [Ncfgs]
 # It returns the normalization factor
 def NORM_FACTOR(a_list):
     # return np.double(np.mean(a_list)) #OLD
     return np.double(np.mean(a_list, dtype=np.float128))
-
 
 
 # It checks for hermiticity
@@ -36,15 +34,12 @@ def MAKES_HERMITIAN(a_matrix):
     return np.float128(1/2)*(np.matrix(a_matrix)+np.conj(np.matrix(a_matrix).T))   
 
 
-
 def LINEAR_COMBINATION(the_list_of_operators, the_list_of_coeff, the_prefactor):
     the_new_correlator = np.float128(0.)
     ## OpLambda=(sqrt(3)/2)*(-Op27 +Op28 -Op33 -2*Op36 + Op37)
     for ii in range(len(the_list_of_operators)):
         the_new_correlator+=np.float128(the_prefactor*the_list_of_operators[ii]*the_list_of_coeff[ii])
     return the_new_correlator
-
-
 
 ### Comments:
 # This receives a list d_list that is a file with the tmax for the fitting
@@ -61,7 +56,6 @@ def T_MAX_LIST(d_list):
       tmax_list.append(other_temp)
   return tmax_list
 
-
 ### Comments:
 # a_string: this is a string of the name of the correlator data without being analysis. It gets from the string if the correlator was modified. It returns the list (First Ncfg, Last Ncfg, step Ncfgs)
 def GETTING_MIN_MAX_CONFIGS(a_string):
@@ -72,7 +66,6 @@ def GETTING_MIN_MAX_CONFIGS(a_string):
     return the_new_string
 
 
-
 ## ------------------- RESHAPING CORRELATORS -----------------------------------
 
 #This function is meant to reshape the multihadron correlators from [Ncfgs, N,N,nt] -> [N,N, Ncfgs,nt]. It receives:
@@ -81,13 +74,11 @@ def GETTING_MIN_MAX_CONFIGS(a_string):
 def RESHAPING(a):
     return np.asarray(np.transpose(a, (1,2,0,3)))
 
-
 # This function reshapes the correlators as: [nt, N, N] --> [N,N,nt]
 # a: the list to reshape
 # s: size of the matrix
 def RESHAPING_CORRELATORS(a):
     return np.asarray(np.transpose(a, (1,2,0)))
-
 
 # This function reshapes the correlators as: [nt, Ncfgs, N, N] --> [N, N, Ncgfs, nt]
 # a: the list to reshape
@@ -95,8 +86,6 @@ def RESHAPING_CORRELATORS(a):
 def RESHAPING_CORRELATORS_RS(a):
     return np.asarray(np.transpose(a, (2,3,1,0)))
 
-
-### SAME THAN THE ONE BELOW!!
 # This function reshapes the correlators as: [nt, Ncfgs, N, N] --> [N, N, nt, Ncgfs] 
 # a: the list to reshape
 # s: size of the matrix
@@ -109,19 +98,6 @@ def RESHAPING_EIGENVALS_MEAN(a):
     return np.asarray(np.transpose(a, (2,0,1)))
 
 
-# This function reshapes the data in the way: [N, N, nt, Ncfgs] -> [nt,Ncfgs N,N]
-# a: list with the data
-# def RESHAPING_EIGENVALS_RS(a):
-    # return np.asarray(np.transpose(a, (2,3,0,1)))
-
-# This function reshapes the eigenvalues from [nt, Ncfgs, Neigens] -->> [Neigens, Ncfgs, nt]. This is used to obtain the fits easier later. 
-# a: is the list of eigenvals, n configs, and time slices.
-# s: size of the matrix or amount of eigenvalues
-# def RESHAPING_EIGENVALS_FOR_FITS(a):
-    # return np.asarray(np.transpose(a, (2,1,0)))
-
-
-
 # This function reshapes the eigenvalues from [nt, Ncfgs, Neigens] -->> [Ncfgs, nt, Neigens]. This is used to obatin the fits easier later. 
 # a: is the list of eigenvals, n configs, and time slices.
 def RESHAPING_EIGEN_FOR_SORTING(a):
@@ -132,17 +108,10 @@ def RESHAPING_EIGEN_FOR_SORTING(a):
 def RESHAPING_EIGENVEC_FOR_SORTING(a):
     return np.asarray(np.transpose(a, (1,0,2,3)))
 
-
-# This function reshapes the eigenvalues from [Ncfgs, nt, Neigens] -->> [nt, Ncfgs, Neigens] . This is used to obatin the fits easier later. 
-# a: is the list of eigenvals, n configs, and time slices.
-# def RESHAPING_EIGEN_FOR_SORTING_REVERSE(a):
-    # return np.asarray(np.transpose(a, (1,0,2)))
-
 # This function reshapes the eigenvalues from [Neigens, Ncfgs, nt] -->> [nt, Ncfgs, Neigens] 
 # a: is the list of eigenvals, n configs, and time slices.
 def RESHAPING_EIGENVALS_NN(a):
     return np.asarray(np.transpose(a, (2,1,0)))
-
 
 # This function reshapes the eigenvalues from [nt, Ncfgs] -->> [Ncfgs, nt]. This is used to obatin the fits easier later. 
 # a: is the list of n configs, and time slices.
@@ -162,12 +131,10 @@ def NCFGS_TO_NT(a):
         eig_corrs.append(np.array(corr_n))
     return np.array(eig_corrs)
 
-
 #Comments
 # This function below shrink the covariance matrix to the size of the nt desired. if originally is: Nt_totalxNt_total, then now it will be: (Nt_total-Nt_min-Nt_max)x(Nt_total-Nt_min-Nt_max).
 def SHRINK_MATRIX(c,low,up):
     return c[low:up, low:up].astype(np.double)
-
 
 
 ## ------------------- OPERATOR REMOVAL FUNCTIONS ----------------------------
@@ -184,7 +151,6 @@ def REMOVE_ROWS_COLS(c,r,ss):
     the_new_r = np.delete(np.delete(r, ss, axis=0), ss, axis=1)
     return the_new_c, the_new_r
 
-
 #Comments:
 # This functions adds cols and rows from  a correlation matrix, leaving it squared as it should be. 
 # c: this is the mean value of correlator matrix. It has a shape of [N, N, nt]
@@ -194,7 +160,6 @@ def ADD_ROWS_COLS(c,r,ss):
     c = np.asarray(c)
     r = np.asarray(r)
     return c[:ss+1, :ss+1], r[:ss+1, :ss+1]
-
 
 #Comments:
 # This functions adds cols and rows from  a correlation matrix, leaving it squared as it should be. 
@@ -206,7 +171,6 @@ def CHOOSE_OPS(c,r,ss):
     r = np.asarray(r)
     the_index = np.ix_(ss,ss)
     return c[the_index], r[the_index]
-
 
 
 #################### ----- ZOE -----
@@ -238,7 +202,6 @@ def COPY_ATTRIBUTES(group_name, attr1, attr2):
 # matrix has the shape (ncfgs, nr ops, nr ops, nt)
 # removes the operators according to the list indices_to_remove
 def REMOVE_OPERATORS(indices_to_remove, matrix):
-
     matrix_new = matrix.copy()
     for i in reversed([1,2]):
         matrix_new = np.delete(matrix_new, indices_to_remove, axis=i)
@@ -247,13 +210,9 @@ def REMOVE_OPERATORS(indices_to_remove, matrix):
 ### Comments:
 # turns the input into a list
 def IRREP_OP_LIST(the_Nr_Irreps, the_Nr_Ops):
-
     the_Nr_Irreps_return = ast.literal_eval(the_Nr_Irreps)
     the_Nr_Ops_return = ast.literal_eval(the_Nr_Ops)
-
     return the_Nr_Irreps_return, the_Nr_Ops_return
-
-
 
 
 ## ------------------- EFFECTIVE MASSES -----------------------------------
@@ -265,7 +224,6 @@ def EFF_MASS_CLASSIC(a):
     meff = np.array([np.log(np.double(a[i])/np.double(a[i+1])) for i in range(len(a)-1)])
     return meff 
 
-
 # This function receives a list "a" of time slices, and it calculates the effective mass, returning a list of effectives masses for each time slice (half integer numbers).
 # a: shape [nt]
 # d: distance of two points, by default this is 1
@@ -273,35 +231,24 @@ def EFF_MASS(a,d):
     meff = np.array([np.log(np.abs(np.double(a[i])/np.double(a[i+d]))) for i in range(len(a)-d)])
     return meff
 
-
 ## This function is created to look at the effective masses of the isospin corrections 
 # a: is the correction to the correlator with shape [nt]
 # b: is the main baryon correlator with shape [nt]
 def EFF_MASS_CORRECTIONS(a,b):
     meff = np.array([np.double(a[i])/np.double(b[i])  - np.double(a[i+1])/np.double(b[i+1]) for i in range(len(a)-1)])
     return meff
-    # meff=[]
-    # for i in range(len(a)-1):
-        # meff.append(np.double(a[i])/np.double(b[i])  - np.double(a[i+1])/np.double(b[i+1]))
-    # return np.array(meff)
 
 # This function receives a list "a" of time slices, and it calculates the effective mass, returning a list of effectives masses for each time slice (half integer numbers).
 # a: shape [nt]
 # d: distance of two points, by default this is 1
 def EFF_MASS_COSH(a,d):
-    meff=[]
-    for i in range(len(a)-d):
-        meff.append(np.acosh(np.abs((np.double(a[i+d]) + np.double(a[i-d]))/np.double(2.*a[i]))))
-    return np.array(meff)
-
+    meff=[np.acosh(np.abs((np.double(a[i+d]) + np.double(a[i-d]))/np.double(2.*a[i]))) for i in range(len(a)-d)]
+    return np.asarray(meff)
 
 
 def DOING_EFFECTIVE_MASSES_EIGENVALUES(gevp_group, the_dist_eff_mass, the_type_rs):
-    
     for item in gevp_group.keys():
-        
         the_group_item = gevp_group[item]
-        
         if 'Effective_masses' in the_group_item.keys(): 
             del gevp_group[f'{item}/Effective_masses']
         group_em_t0 = the_group_item.create_group('Effective_masses')
@@ -310,16 +257,13 @@ def DOING_EFFECTIVE_MASSES_EIGENVALUES(gevp_group, the_dist_eff_mass, the_type_r
         the_evalues_mean_f = np.asarray(the_group_item['Eigenvalues/Mean'])
         
         the_n_modes = the_evalues_mean_f.shape[0]
-        
         ### Loop over the total number of eigenvalues
         the_eff_mass_mean = np.empty((the_n_modes,the_evalues_mean_f.shape[1]-1))
         the_cov_eff_mass = np.empty((the_n_modes,the_evalues_mean_f.shape[1]-1))
         
         for ls in range(the_n_modes):
             the_eff_mass_mean[ls] = EFF_MASS(the_evalues_mean_f[ls,:], the_dist_eff_mass)
-            
             the_eff_mass_rs = np.array([EFF_MASS(the_evalues_rs_f[ls,zz,:], the_dist_eff_mass) for zz in range(the_evalues_rs_f.shape[1])])
-            
             ### Reshaping the data
             the_eff_mass_rs = NT_TO_NCFGS(the_eff_mass_rs)
             
@@ -493,7 +437,6 @@ def DOING_THE_GEVP(the_t0_min_max, the_nt, the_mean_corr, the_rs_real, the_type_
         
         ### Reshaping eigenvectors and eigenvalues for sorting
         the_mod_evals_rs = RESHAPING_EIGEN_FOR_SORTING(np.asarray(the_evals_rs))
-        
         the_mod_evectors_rs = RESHAPING_EIGENVEC_FOR_SORTING(np.asarray(the_evecs_rs))
         
         ### Loop over the resamples (sorting)
@@ -547,9 +490,7 @@ def T0_RETURN(n_t):
 # Solves the GEVP but the time slice diagonalized to changes with n_t -> no loop over T0
 # the_t0_sorting: time slice where the sorting should start, e.g. = 3
 # everything else like in DOING_THE_GEVP
-def DOING_THE_GEVP_RUNNING_T0(the_t0_sorting, the_nt, the_mean_corr, the_rs_real, the_type_rs, the_sorting, the_sorting_process, the_rs_sorting_process,
-                   group_i):
-
+def DOING_THE_GEVP_RUNNING_T0(the_t0_sorting, the_nt, the_mean_corr, the_rs_real, the_type_rs, the_sorting, the_sorting_process, the_rs_sorting_process, group_i):
     print('WINDOW METHOD')
 
     the_evals_mean, the_evecs_mean = [], []
@@ -638,7 +579,7 @@ def DOING_THE_GEVP_RUNNING_T0(the_t0_sorting, the_nt, the_mean_corr, the_rs_real
         group_eigns.create_dataset('Mean', data=the_eigevals_final_mean)
         group_eigns.create_dataset('Resampled', data=the_evals_fits_rs)
         group_eigns.create_dataset('Covariance_matrix', data=np.array(the_sigma_2))
-        print(f'T0 WINDOW METHODE...DONE')
+        print(f'T0 WINDOW METHOD...DONE')
         
         
         
@@ -844,14 +785,11 @@ def SORTING_EIGENVECTORS_CHANGING_TSLICE_OLD(the_eigenvals, the_eigenvecs, the_t
 
 
 def SORTING_EIGENVECTORS_CHANGING_TSLICE(the_eigenvals, the_eigenvecs, the_t0):
-    # --- Referenz-Time-Slice bestimmen ---
     the_ref_tslice = int((len(the_eigenvals) - the_t0) / 3)
 
-    # --- Reference-Time-Slice: sortiere Eigenwerte absteigend ---
     sorted_indices_ref = np.argsort(the_eigenvals[the_ref_tslice])[::-1]  # größter Eigenwert zuerst
     the_ref_eigenvec = np.array([the_eigenvecs[the_ref_tslice][i] for i in sorted_indices_ref])
 
-    # Initialisiere die finalen Listen
     the_final_eigens = [np.array([the_eigenvals[tt][i] for i in sorted_indices_ref])
                         for tt in range(the_ref_tslice + 1)]
     the_final_eigenvecs = [np.array([the_eigenvecs[tt][i] for i in sorted_indices_ref])
@@ -859,13 +797,11 @@ def SORTING_EIGENVECTORS_CHANGING_TSLICE(the_eigenvals, the_eigenvecs, the_t0):
 
     all_sorted_indices = []
 
-    # --- Restliche Slices per Eigenvektor-Überlappung sortieren ---
     for ii in range(the_ref_tslice + 1, len(the_eigenvals)):
         ckl_k = np.array([[np.abs(np.dot(the_ref_eigenvec[kk], the_eigenvecs[ii][ll].T))
                            for ll in range(len(the_ref_eigenvec))]
                           for kk in range(len(the_ref_eigenvec))], dtype=np.float128)
 
-        # Alle Werte + Indizes flatten, sortiert absteigend
         ckl = sorted([(ckl_k[i, j], i, j)
                       for i in range(ckl_k.shape[0])
                       for j in range(ckl_k.shape[1])], reverse=True)
@@ -878,16 +814,12 @@ def SORTING_EIGENVECTORS_CHANGING_TSLICE(the_eigenvals, the_eigenvecs, the_t0):
                 the_used_rows.add(i_row)
                 the_used_cols.add(j_col)
 
-        # Indizes nach Referenz-Reihenfolge sortieren
         the_sorted_indices = [sel[1] for sel in sorted(the_selected, key=lambda x: x[0])]
         all_sorted_indices.append(the_sorted_indices)
 
         sorted_vecs = np.array([the_eigenvecs[ii][i] for i in the_sorted_indices])
-
-        # normalize
         sorted_vecs = sorted_vecs / np.linalg.norm(sorted_vecs, axis=1, keepdims=True)
 
-        # sign fix vs previous slice
         for k in range(len(sorted_vecs)):
             if np.dot(the_ref_eigenvec[k], sorted_vecs[k]) < 0:
                 sorted_vecs[k] *= -1
@@ -901,48 +833,37 @@ def SORTING_EIGENVECTORS_CHANGING_TSLICE(the_eigenvals, the_eigenvecs, the_t0):
 
 
 def SORTING_EIGENVECTORS_CHANGING_TSLICE_TEST(the_eigenvals, the_eigenvecs, the_t0):
-    # --- Reference Time Slice ---
     the_ref_tslice = int((len(the_eigenvals) - the_t0) / 3)
 
-    # Sort reference slice by eigenvalue magnitude (descending)
     sorted_indices_ref = np.argsort(the_eigenvals[the_ref_tslice])[::-1]
     the_ref_eigenvec = np.array([the_eigenvecs[the_ref_tslice][i] for i in sorted_indices_ref])
-
-    # Initialize final lists
+    
     the_final_eigens = [np.array([the_eigenvals[tt][i] for i in sorted_indices_ref])
                         for tt in range(the_ref_tslice + 1)]
     the_final_eigenvecs = [np.array([the_eigenvecs[tt][i] for i in sorted_indices_ref])
                            for tt in range(the_ref_tslice + 1)]
 
-    # --- Loop over remaining slices ---
     for ii in range(the_ref_tslice + 1, len(the_eigenvals)):
         curr_vecs = np.array(the_eigenvecs[ii])
 
-        # Normalize vectors
         the_ref_eigenvec = the_ref_eigenvec / np.linalg.norm(the_ref_eigenvec, axis=1, keepdims=True)
         curr_vecs = curr_vecs / np.linalg.norm(curr_vecs, axis=1, keepdims=True)
 
-        # Fix sign relative to reference slice
         for k in range(len(curr_vecs)):
             sign = np.sign(np.dot(the_ref_eigenvec[k], curr_vecs[k]))
             curr_vecs[k] *= sign
 
-        # Compute overlap matrix
         overlap = np.abs(np.dot(the_ref_eigenvec, curr_vecs.T))
 
-        # Hungarian algorithm for global optimal assignment
         row_ind, col_ind = linear_sum_assignment(-overlap)  # maximize overlap
         sorted_indices = col_ind
 
-        # Apply sorted indices
         sorted_vecs = curr_vecs[sorted_indices]
         sorted_vals = np.array([the_eigenvals[ii][i] for i in sorted_indices])
 
-        # Append to final lists
         the_final_eigens.append(sorted_vals)
         the_final_eigenvecs.append(sorted_vecs)
 
-        # Update reference for next slice
         the_ref_eigenvec = sorted_vecs
 
     return [the_final_eigens, the_final_eigenvecs]
@@ -969,7 +890,6 @@ def SORTING_EIGENVECTORS_RS_MEAN(the_eigenvals, the_eigenvecs, the_t0, mean_eigv
             ref = ref / np.linalg.norm(ref, axis=1, keepdims=True)
             curr = curr / np.linalg.norm(curr, axis=1, keepdims=True)
 
-            ### Resamples sollen in die gleiche Richtung wie mean zeigen
             for i in range(len(curr)):
                 sign = np.sign(np.dot(ref[i], curr[i]))
                 curr[i] *= sign
@@ -1105,7 +1025,7 @@ def BINNING_CUSTOM_CORR_WEIGHTS(a):
 # rw: list of reweighting factors [Ncfgs]
 # it returns a list with the normalized reweighting factors
 def RW_NORMALIZATION(rw, nfs):
-    len_rw = np.double(nfs)#len(rw))
+    len_rw = np.double(nfs)
     nrm_fktr_rw = 0. ; new_rw = []
     for ll in range(int(len_rw)):
         nrm_fktr_rw += np.double(rw[ll])
@@ -1139,7 +1059,7 @@ def REWEIGHTS(the_rw_list, the_nfs):
         elif ncols == 4:
             return data[3]
         else:
-            raise ValueError(f"Unsupported column structure in {the_file}: {ncols} columns")
+            raise ValueError(f"Unsupported structure in {the_file}: {ncols} columns")
     processed = [process_file(f) for f in the_rw_list]
     if len(processed) == 1:
         the_weight = processed[0]
@@ -1307,18 +1227,17 @@ def DOUBLE_EXPONENTIAL(x, e0, *a):
 
 
 def DOUBLE_EXPONENTIAL_IB(x, p,*a):
-    # a0, e0, r, de = p
     return p[0] * np.exp(-p[1] * x) * (1.0 + p[2] * np.exp(-p[3] * x))
 
 
 def DOUBLE_EXP_CORRECTIONS_IB(x, p, *a):
-    # a0, e0, r, de, da0, de0, dr, dde = p
     the_base = np.exp(-p[1] * x)
     return ((p[4] - p[0] * p[5] * x) * the_base * (1.0 + p[2] * np.exp(-p[3] * x)) + p[0] * the_base * (p[6] - p[2] * p[7] * x) * np.exp(-p[3] * x))
 
 
 def SINGLE_EXP_CORRECTIONS_IB(x,e0,*a): 
-    return (e0[2] - e0[0] * e0[3] * x) * np.exp((-e0[1]) * (x - a))
+    # return (e0[2] - e0[0] * e0[3] * x) * np.exp((-e0[1]) * (x - a))
+    return e0[1] - e0[0]*x
 
 ### Comments:
 # This function tries to find a good guess for the fit to have a prior, so it would in principle take less time. It uses a simple polynomial fit of order 1. 
@@ -1338,10 +1257,8 @@ def BEST_GUESS(c,t_i,tipo_fit):
 ### Comments: 
 # This function gets the Difference between a Chi^{2} of one time slice compared to the next time slice value of Chi^{2}. This in order to check for stability.
 def DELTA_CHI(a):
-    delta_chi = []
-    for ii in range(len(a)-1):
-        delta_chi.append(a[ii ] - a[ii + 1])
-    return np.array(delta_chi)
+    delta_chi = [a[ii ] - a[ii + 1] for ii in range(len(a)-1)]
+    return np.asarray(delta_chi)
 
 
 ### Comments:
@@ -1350,10 +1267,8 @@ def DELTA_CHI(a):
 # b: the list of time slices
 # c: the total number of time slices
 def TOTAL_CHI(a,b,c,nrp):
-    total_a = []
-    for ii in range(len(a)):
-        total_a.append(a[ii] * (np.double(c[ii] - np.double(b[ii])) - np.double(nrp)))
-    return np.array(total_a)
+    total_a = [a[ii] * (np.double(c[ii] - np.double(b[ii])) - np.double(nrp)) for ii in range(len(a))]
+    return np.asarray(total_a)
 
 
 
@@ -1457,7 +1372,6 @@ def DOING_THE_FITTING(the_corr, the_nt, the_type_rs, the_irreps, the_irrep, tmin
         elif the_type_correlated_fit=='Uncorrelated':
             the_cov_matrix_fit = np.diag(np.diag(the_cov_matrix[ls]))        
         
-        # the_energies_list, the_sigmas_list, the_chi_vals_list, the_sigmas_chi_list = [], [], [], []
         another_list = []
         
         the_results = {'the_energies': [], 'the_sigmas': [], 'the_chi_vals': [], 'the_sigmas_chi': [], 'the_resampled': []}
@@ -1500,13 +1414,11 @@ def DOING_THE_FITTING(the_corr, the_nt, the_type_rs, the_irreps, the_irrep, tmin
             the_dof_rs = the_dof
             the_dof_rs[0], the_dof_rs[1] = np.float64(the_fit.values['a0']), e0
             
-            # the_energies_list.append(e0); the_chi_vals_list.append(np.float64(the_fit.fval));
             another_useful_list.append(e0)
             
             the_results['the_energies'].append(e0)
             the_results['the_chi_vals'].append(the_fit.fval)
-            
-            # zz=0
+
             chi_vals_rs_list = []
             the_corr_fit_rs_eigen = the_corr_fit_rs[ls]
             ### Loop over the resamples
@@ -1523,16 +1435,15 @@ def DOING_THE_FITTING(the_corr, the_nt, the_type_rs, the_irreps, the_irrep, tmin
             ### This is the sigma for the fittings
             sigma_fit_rs = STD_DEV(another_useful_list[1:], np.mean(another_useful_list[1:]), the_type_rs)
             sigma_chi_rs = STD_DEV(chi_vals_rs_list, np.mean(chi_vals_rs_list), the_type_rs)
-            
-            # the_sigmas_list.append(sigma_fit_rs); the_sigmas_chi_list.append(sigma_chi_rs);
+
             another_list.append(np.array(another_useful_list))
             
             the_results['the_sigmas'].append(sigma_fit_rs)
             the_results['the_sigmas_chi'].append(sigma_chi_rs)
-        print('E = %s READY'%ls)    
+        print(f'E = {ls} READY')    
         
-        the_rs_data.create_dataset('lambda_%s'%ls, data=np.array(another_list))
-        the_mean_data.create_dataset('lambda_%s'%ls, data = np.array([the_ll + the_nt[0], [the_ul[ls]+the_nt[0]]*len(the_ll), the_results['the_energies'], the_results['the_sigmas'], the_results['the_chi_vals'], the_results['the_sigmas_chi']]))    
+        the_rs_data.create_dataset(f'lambda_{ls}', data = np.asarray(another_list))
+        the_mean_data.create_dataset(f'lambda_{ls}', data = np.asarray([the_ll + the_nt[0], [the_ul[ls]+the_nt[0]]*len(the_ll), the_results['the_energies'], the_results['the_sigmas'], the_results['the_chi_vals'], the_results['the_sigmas_chi']]))    
         
         
 
@@ -1541,15 +1452,15 @@ def DOING_THE_FITTING(the_corr, the_nt, the_type_rs, the_irreps, the_irrep, tmin
 
 ### Comments:
 def CONTINUUM_DISP_REL(p, E0, norm):
-        E = np.sqrt(E0 ** 2 + int(p) * norm)
-        E_norm = E / E0  # aE
-        return E_norm
+    E = np.sqrt(E0 ** 2 + int(p) * norm)
+    E_norm = E / E0  # aE
+    return E_norm
 
 ### Comments:
 # calculates the fraction of the measured energy E (lat units) and the values of the continuum dispersion relation for the measured E0
 def RELATIVE_DISP_REL(p, E0, E, norm):
-        E_disp = np.sqrt(E0 ** 2 + int(p) * norm)
-        return E / E_disp
+    E_disp = np.sqrt(E0 ** 2 + int(p) * norm)
+    return E / E_disp
     
     
 
@@ -1585,8 +1496,7 @@ def NON_INTERACTING_LEVELS(non_int_list, t_mins_range, singles_files, t_mins_shi
             try:
                 singles_dict[meson][irrep] = {
                     'Mean': dataset.get('1exp/Tmin/Correlated/Mean')[()][2, t_mins_range[meson][i] - t_mins_shift],
-                    'Resampled': dataset.get('1exp/Tmin/Correlated/Resampled')[()][t_mins_range[meson][i] - t_mins_shift]
-                }
+                    'Resampled': dataset.get('1exp/Tmin/Correlated/Resampled')[()][t_mins_range[meson][i] - t_mins_shift]}
                 nr_rs = dataset.get('1exp/Tmin/Correlated/Resampled')[()][t_mins_range[meson][i] - t_mins_shift].size
             except KeyError:
                 raise KeyError(f'Irrep {irrep} does not excist in {meson} file.')
@@ -1649,20 +1559,20 @@ def UNIT_CONVERSION(val, a, MeV):
 
 
 
-### ---------------------------------- RATIO OF CORRELATORS FUNCTIONS -------------------------------
+### ---------------------------------- RATIO OF CORRELATORS -------------------------------
 ### Comments:
 # This class gets the info of the non-interacting levels. It only works when there is a threshold of 2 states nearby. It needs modification for the 3particle threshold.
 class NonInteractingLevels:
     def __init__(self,nombre,all_hads):
         self.FirstState = str(nombre[:4])
         self.SecondState =  str(nombre[4:])
-        FirstRaw = 'PSQ'+ str(self.FirstState[2])+'__'+ str(self.FirstState[0])
-        SecondRaw = 'PSQ'+ str(self.SecondState[2])+'__'+ str(self.SecondState[0])
+        FirstRaw = 'PSQ'+ str(self.FirstState[2])+'_'+ str(self.FirstState[0])
+        SecondRaw = 'PSQ'+ str(self.SecondState[2])+'_'+ str(self.SecondState[0])
         for item in all_hads:
-            if FirstRaw[:4] in item and FirstRaw[-1]==item[-1]: first_name = item;break
+            if FirstRaw[:4] in item and FirstRaw[-1]==item[-1].capitalize(): first_name = item;break
             else: continue
         for item in all_hads:
-            if SecondRaw[:4] in item and SecondRaw[-1]==item[-1]: second_name = item;break
+            if SecondRaw[:4] in item and SecondRaw[-1]==item[-1].capitalize(): second_name = item;break
             else: continue
         self.First = first_name
         self.Second = second_name

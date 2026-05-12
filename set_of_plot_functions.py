@@ -13,6 +13,148 @@ matplotlib.rcParams['mathtext.fontset'] = 'stix'
 matplotlib.rcParams['font.family'] = 'STIXGeneral'
 
 
+from dataclasses import dataclass
+from typing import Optional, Tuple
+
+
+@dataclass
+class FitPlots:
+    type_fit: str = '1' #'1' #'2' #'g'
+    t0: int = 4
+    type_correlation: str = 'Correlated' # 'Uncorrelated'    
+
+@dataclass
+class NrIrreps:
+    first_irrep : int
+    last_irrep: int
+    steps: Optional[int]
+    nr_irreps : int
+    
+
+@dataclass
+class Runs:
+    ensemble: str
+    correlator: str
+    rs_type: str
+    isospin: Optional[str]
+
+    rebin: bool
+    rb: int
+    
+    ### What to do 
+    corrs: bool
+    effmass: bool
+    fits: bool
+    fitmass: bool
+    join: bool
+    
+    ### These are intended to differentiate between the main set of correlators and the reduced set when obtianing the eff masses and performing the fits
+    diag_flag: bool
+    gevp_flag: bool
+    ops_flag: bool
+    
+    ### Extra flags
+    fit_param: FitPlots
+    zoom_fit: bool
+    plot_chi: bool
+    total_chi_plot: bool
+    delta_chi_plot: bool
+    all_fits: bool
+    
+    ### Getting the irreps if not all are wanted
+    the_irreps: NrIrreps
+    
+    ib_corr: bool
+    
+import argparse
+### Comments:
+# this function allows you to put all inputs in the terminal as variables. Easier for the amount of variables we have
+def parse_args():
+    parser = argparse.ArgumentParser(description="Correlator analysis")
+
+    ### These are mandatory
+    parser.add_argument("-e", "--ensemble", required=True) # lowercase ensemble name
+    parser.add_argument("-c", "--correlator", required=True, choices=["s", "m", "mr"]) # single-, multi-hadron or ratio of corrs.
+    parser.add_argument("-rs", "--rs-type", required=True, choices=["jk", "bt"]) # resampling schemes    
+
+    ### These are optional
+    parser.add_argument("-i", "--isospin", default=None, choices=["s", "d", "t", "q"]) # isosinglet, isodoublet, isotriplet, isoquartet
+    
+    ### Binning info
+    parser.add_argument("--rebin", action="store_true")
+    parser.add_argument("-rb", "--rb", type=int, default=10)
+
+    ### What to do
+    parser.add_argument("--corrs", action="store_true") # Correlator plots
+    parser.add_argument("--effmass", action="store_true") # Effective mass plots
+    parser.add_argument("--fits", action="store_true") # Fitting plots
+    parser.add_argument("--fitted-mass", action="store_true") # Fitted eff masses plots
+    parser.add_argument("--join", action="store_true") # Put together all plots in one pdf
+    parser.add_argument("--ib-corr", action="store_true") # including ib corrections
+    
+    parser.add_argument("--diag-flag", action="store_true")
+    parser.add_argument("--ops-flag", "--ops", action="store_true")
+    parser.add_argument("--gevp-flag", action="store_true")
+    
+    ### Extra params
+    parser.add_argument("--zoom-fit", action="store_true", default=False)
+    parser.add_argument("--plot-chi", action="store_true", default=False)
+    parser.add_argument("--total-chi-plot", action="store_true", default=False)
+    parser.add_argument("--delta-chi-plot", action="store_true", default=False)
+    parser.add_argument("--all-fits", action="store_true", default=False)
+    
+    ### Fit params 
+    parser.add_argument("--fit-type", choices=["1", "2", "g"], default="1")
+    parser.add_argument("--fit-correlation", choices=["Correlated", "Uncorrelated"], default="Correlated")
+    parser.add_argument("--fit-t0", default=4)
+    
+    ### How many Irreps to do
+    parser.add_argument("-fi", "--start-irrep", type=int)
+    parser.add_argument("-li","--last-irrep", type=int)
+    parser.add_argument("-ir","--nr-irreps", type=int)
+    
+    return parser.parse_args()
+    
+
+### Comments:
+# This routine selects which runs to do, for example the corrs, the effective masses, etc.
+def WhichRuns(args, the_ensemble_data):
+    ### Fit parameters
+    fit_run = FitPlots(type_fit = args.fit_type if args.fits else "1", type_correlation = args.fit_correlation, t0=args.fit_t0)
+    
+    ### Which irreps to run
+    the_irreps = NrIrreps(first_irrep = args.start_irrep if args.start_irrep else None, last_irrep = args.last_irrep if args.last_irrep else None, nr_irreps =  args.nr_irreps if args.nr_irreps else None, steps = 1)
+
+    return Runs(
+        ensemble=args.ensemble.upper(),
+        correlator=args.correlator.lower(),
+        rs_type=args.rs_type,
+        isospin=args.isospin.lower() if args.isospin else None,
+
+        rebin=args.rebin,
+        rb=args.rb,
+
+        corrs=args.corrs,
+        effmass=args.effmass,
+        fits=args.fits,
+        fit_param=fit_run,
+        fitmass=args.fitted_mass,
+        join=args.join,
+        
+        zoom_fit=args.zoom_fit,
+        plot_chi=args.plot_chi,
+        total_chi_plot=args.total_chi_plot,
+        delta_chi_plot=args.delta_chi_plot,
+        all_fits=args.all_fits,
+        
+        diag_flag=args.diag_flag,
+        gevp_flag=args.gevp_flag,
+        ops_flag=args.ops_flag,
+        
+        the_irreps = the_irreps,
+        ib_corr = args.ib_corr,
+        )
+
 ### ------------------  PLOTTING STUFF --------------------------------------------------
 
     
@@ -100,24 +242,6 @@ def OPERATORS_SH(operator_name):
         OperatorPlot = str(new_op[-2])
     return str(OperatorPlot)
 
-
-### Comments:
-# This function receives an operator name and returns a string in a nice way to put in the plots. 
-def OPERATORS_SH_ISOSPIN(the_hadron):
-    the_hadron_isolabel = ''
-    if the_hadron.upper()=='P':
-        the_hadron_isolabel = '1'
-    elif the_hadron.upper()=='K':
-        the_hadron_isolabel = r'$\frac{1}{2}$'
-    elif the_hadron.upper()=='N':
-        the_hadron_isolabel = r'$\frac{1}{2}$'
-    elif the_hadron.upper()=='L':
-        the_hadron_isolabel = '0'
-    elif the_hadron.upper()=='S':
-        the_hadron_isolabel = '1'
-    elif the_hadron.upper()=='X':
-        the_hadron_isolabel = r'$\frac{1}{2}$'
-    return the_hadron_isolabel
 
 def PLOT_HADRON_LABELINGS(the_irrep_name):
     the_irrep_name = the_irrep_name.replace(" ","")
@@ -405,8 +529,6 @@ class IrrepInfo:
         self.Name = self.name[1]
         self.NamePlot = PLOT_HADRON_LABELINGS(self.Name)
         self.Momentum = self.name[0][-1]
-        self.Hadron = self.name[-1]
-        self.HadronIsospin = OPERATORS_SH_ISOSPIN(self.Hadron)
         # self.TotalMomPlot = self.name[0][0]+ r'$^{2}=%s$'%self.name[0][-1]
         # self.TotalMomPlot = r'$\vec{\mathbf{d}}^{2}=%s$'%self.name[0]
         self.TotalMomPlot = r'$\vec{\mathbf{d}}^{2}=%s$'%self.Momentum
@@ -467,38 +589,35 @@ def PLOT_CORRELATORS(the_nt, the_mean_corr, the_sigmas_corr, the_rs_scheme, the_
     the_min_position = np.where(the_mean_corr == min(the_mean_corr[:-3]))
     the_max_position = np.where(the_mean_corr == max(the_mean_corr[:-3]))
     
-    the_min_y = (the_mean_corr[the_min_position]-the_sigmas_corr[the_min_position])*.95
+    the_min_y = (the_mean_corr[the_min_position]-the_sigmas_corr[the_min_position])*.9
     the_max_y= (the_mean_corr[the_max_position]+the_sigmas_corr[the_max_position])*1.05 
     
-    plt.errorbar(the_nt, the_mean_corr, yerr = the_sigmas_corr, marker=the_marker, ls='None', ms=4, markeredgewidth=1.75, lw=1.75, elinewidth=1.75, zorder=3, capsize=2.85, label = the_rs_scheme, color='#5d83d5')
-    plt.xlabel(the_x_axis_label,fontsize=28)
-    plt.ylabel(the_y_axis_label,fontsize=28)
+    plt.errorbar(the_nt, the_mean_corr, yerr = the_sigmas_corr, marker=the_marker, ls='None', ms=4.5, markeredgewidth=1.75, lw=1.75, elinewidth=1.75, zorder=3, capsize=3., label = the_rs_scheme, color='#5d83d5')
+    plt.xlabel(the_x_axis_label,fontsize=24)
+    plt.ylabel(the_y_axis_label,fontsize=24)
     plt.title(the_title_info,fontsize=20)
     plt.xticks(the_nt_ticks,fontsize=18)
     plt.yticks(fontsize=18)
     if kwargs.get('yscale')!=None: plt.yscale(str(kwargs.get('yscale')))
     else:
         plt.ylim([the_min_y, the_max_y])
-        # if kwargs.get('ymin')!=None:
-            # plt.ylim(ymin=kwargs.get('ymin'), ymax=CHOOSING_YMAX_PLOT(the_mean_corr)*1.05)
     plt.legend(fontsize=16, handletextpad=0.01)
     plt.tight_layout()
-    # plt.show()
     
     
 def PLOT_HISTOGRAMS(the_rs, the_label , the_mean_rs, the_label_mean_rs, the_nt_mean, the_label_mean_nt, the_title_info, the_bins,  the_x_axis_label):
     counts, bins, patches = plt.hist(the_rs, bins=the_bins, label =  the_label, color='#5d83d5')
-    padding = counts.max() * 0.1  # 10% padding on top
+    padding = counts.max() * 0.15 
     plt.vlines(the_mean_rs, 0, 200, colors= '#b90f22', label = the_label_mean_rs)
     plt.vlines(the_nt_mean, 0, 200, colors='black', label = the_label_mean_nt)
     plt.title( the_title_info,fontsize=20)
     plt.ylabel('Frequency',fontsize=24)
     plt.xlabel(the_x_axis_label, fontsize=24)
     plt.legend(fontsize=14, handletextpad=0.01)
-    plt.tight_layout()
+    plt.xticks(fontsize=14)
+    plt.yticks(fontsize=14)
     plt.ylim(0, counts.max() + padding)
-    # plt.show()
-
+    plt.tight_layout()
 
 
 def PLOT_FITS(the_nt, the_plot_data, the_sigmas_data, the_chosen_tmin, the_label, the_xlabel, the_ylabel, the_title, the_nt_ticks, **kwargs):
@@ -507,9 +626,9 @@ def PLOT_FITS(the_nt, the_plot_data, the_sigmas_data, the_chosen_tmin, the_label
         the_ul = int(kwargs.get('the_ul'))
         plt.errorbar(the_nt[the_chosen_tmin-the_ll:the_chosen_tmin+the_ul], the_plot_data[the_chosen_tmin-the_ll:the_chosen_tmin+the_ul], yerr = the_sigmas_data[the_chosen_tmin-the_ll:the_chosen_tmin+the_ul], marker='o', ls='None', ms=6, markeredgewidth=1.75, lw=1.75, elinewidth=1.75, zorder=3, capsize=6, color='#5d83d5')#, label='Bootstrap')
     else:
-        plt.errorbar(the_nt, the_plot_data, yerr = the_sigmas_data, marker='o', ls='None', ms=6, markeredgewidth=1.75, lw=1.75, elinewidth=1.75, zorder=3, capsize=6,color='#5d83d5')#, label='Bootstrap')
+        plt.errorbar(the_nt, the_plot_data, yerr = the_sigmas_data, marker='o', ls='None', ms=4, markeredgewidth=2.5, lw=2.5, elinewidth=2.5, zorder=3, capsize=6,color='#5d83d5')#, label='Bootstrap')
         plt.xticks(the_nt_ticks,fontsize=18)    
-    plt.errorbar([the_nt[the_chosen_tmin]], [the_plot_data[the_chosen_tmin]], yerr = [the_sigmas_data[the_chosen_tmin]], marker='o', ls='None', ms=7, markeredgewidth=1.75, lw=1.75, color = '#b90f22', elinewidth=1.75, zorder=3, markerfacecolor = 'white', capsize=6, label = the_label)
+    plt.errorbar([the_nt[the_chosen_tmin]], [the_plot_data[the_chosen_tmin]], yerr = [the_sigmas_data[the_chosen_tmin]], marker='o', ls='None', ms=4.5, markeredgewidth=2.5, lw=2.5, color = '#b90f22', elinewidth=2.5, zorder=3, markerfacecolor = 'white', capsize=6, label = the_label)
     plt.yticks(fontsize=18)
     plt.legend(fontsize=16, ncols=2, columnspacing=0.1,handletextpad=0.01)
     plt.xlabel(the_xlabel,fontsize=36)
@@ -544,8 +663,7 @@ def PLOT_FITTED_EFF_MASSES(the_nt, the_mean_corr, the_sigmas_corr, the_fit_data,
     the_min_y = (the_mean_corr[the_min_position] - the_sigmas_corr[the_min_position]) * .95
     the_max_y = (the_mean_corr[the_max_position] + the_sigmas_corr[the_max_position]) * 1.05
 
-    plt.errorbar(the_nt, the_mean_corr, yerr=the_sigmas_corr, marker='o', ls='None', ms=8, markeredgewidth=1.75,
-                 lw=1.75, elinewidth=1.75, capsize=5, label=the_rs_scheme, color=the_color_eff_mass)
+    plt.errorbar(the_nt, the_mean_corr, yerr=the_sigmas_corr, marker='o', ls='None', ms=6, markeredgewidth=1.25, lw=1.25, elinewidth=1.25, capsize=5, label=the_rs_scheme, color=the_color_eff_mass)
 
     plt.axhline(y=the_fit_data[the_chosen_tmin], color=the_color_fit, ls='-', lw=1.75, label=the_label)
 
@@ -560,12 +678,9 @@ def PLOT_FITTED_EFF_MASSES(the_nt, the_mean_corr, the_sigmas_corr, the_fit_data,
     plt.xticks(the_nt_ticks, fontsize=18)
     plt.ylim([the_min_y, the_max_y])
     plt.yticks(fontsize=18)
-    # plt.gca().yaxis.set_major_formatter(mtick.FormatStrFormatter('%.2f'))
-    # # plt.xlim([the_nt[1]*.75,len(the_nt)])
     plt.xlim([the_nt[0] - 1, the_nt_ticks[-1] + 1])
     plt.legend(fontsize=18, handletextpad=0.3)
     plt.tight_layout()
-    # plt.show()
     
     
     
@@ -590,8 +705,7 @@ mid_grey = (130 / 255, 130 / 255, 130 / 255)
 light_grey = (191 / 255, 191 / 255, 191 / 255)
 
 ### Colors and markers need to appear in those lists
-# colors = [pink, violet, dark_violet, green, dark_blue, orange_light, blue]
-colors  = [ "#5d83d5", "#b90f22", "#ffa500", "#008000", "#c44601", "#f57600", "#5ba300","#e6308a", "#8a2be2", "#00ced1", "#ffd700", "#ff69b4", "#7cfc00", "#dc143c", "#4682b4", "#ff8c00", "#00fa9a", "#9370db", "#1e90ff", "#ff1493", "#9acd32"]
+colors = [pink, violet, dark_violet, green, dark_blue, orange_light, blue]
 all_colors = [pink, violet, dark_violet, green, dark_blue, orange_light, blue, brown, orange_dark, green_dark, türkis, rosa, mid_grey, dark_grey]
 special_colors =[dark_violet, orange_light]
 greys = [dark_grey, mid_grey, light_grey]
