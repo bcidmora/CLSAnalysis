@@ -23,13 +23,9 @@ import sys
 
 import ensembles as ed
 
-### ------ EXTRA VARIABLES -----
+### ------ EXTRA VARIABLES ----- ### TO CHECK 
 # runSorting = False
 # runReduceDataSet = False
-
-### TO CHECK 
-# myNrIrreps = []
-# myNrOps = []
 # runPlotBinOnly = False
 
 
@@ -50,7 +46,7 @@ reBin = f"_bin{myRuns.rb}" if myRuns.rebin else ""
 myLocation = vfl.DIRECTORY_EXISTS(f'{ed.outputLocation}{myRuns.ensemble}/')
 
 ### ----  GETTING THE INFO FROM THE FOLLOWING FILES -------
-myCnfgs = ed.ensembles[myRuns.ensemble]['ncfgs'] # None # 20 # 100
+myCnfgs = ed.ensembles[myRuns.ensemble]['ncfgs']
 myWeight = vfa.REWEIGHTS(ed.ensembles[myRuns.ensemble]['weight_raw'], myCnfgs)
 
 if not ed.ensembles[myRuns.ensemble]['allConfigs']:
@@ -67,7 +63,6 @@ vfl.INFO_PRINTING(myRuns.correlator, myRuns.ensemble)
 ##  Single Hadron correlators
 if myRuns.correlator =='s':
     myVersion =  f'{myRuns.ensemble}_singles_test' 
-    
     myArchivo = h5py.File(ed.ensembles[myRuns.ensemble]['fs'], 'r')
     myIrreps = list(myArchivo.keys())        
     
@@ -171,34 +166,29 @@ elif myRuns.correlator=='m':
         rcs.OperatorsAnalysis(myCorrelator, myRuns.rs_type, myIrreps, myT0Min, myT0Max, locationWorkedCorrelators, myChosenOpsList, sorting = mySorting, the_td = myTD, rs_sorting = myRsSorting)
     
     ### Effective Masses analysis
-    if myRuns.effmass: 
-        if myRuns.gevp_flag:
-            efs.MultiCorrelatorEffectiveMass(myCorrelator, myRuns.rs_type, dist_eff_mass = myRuns.dist_eff_mass)
-        elif myRuns.ops_flag:
+    if myRuns.effmass:
+        if myRuns.ops_flag or myRuns.ops:
             myVersion =  f'{myRuns.ensemble}_{myChosenIsospin}_reduced_test' 
             locationWorkedCorrelators = f'{myLocation}Matrix_correlators_{myRuns.rs_type}{reBin}_{myVersion}.h5'
             myCorrelator = h5py.File(locationWorkedCorrelators, 'r+')     
+            efs.MultiCorrelatorEffectiveMass(myCorrelator, myRuns.rs_type, dist_eff_mass = myRuns.dist_eff_mass)
+        else:
             efs.MultiCorrelatorEffectiveMass(myCorrelator, myRuns.rs_type, dist_eff_mass = myRuns.dist_eff_mass)
 
     ### Fits analysis
     if myRuns.fits:
-        myT0 = myRuns.fit.t0
-        myOneT0 = myRuns.fit.one_t0
-        myOneTMin = myRuns.fit.one_tmin
-        myTypeFit = myRuns.fit.type_fit
-        myTypeCorrelation = myRuns.fit.type_correlation
         myFitsLocation = vfl.DIRECTORY_EXISTS(f'{myLocation}Fits_Matrices/')
         
-        if myRuns.gevp_flag:
-            myTMaxList = ed.ensembles[myRuns.ensemble][myIsospin]['multiTMaxFits']
-        elif myRuns.ops_flag:
+        if myRuns.ops_flag or myRuns.ops:
             myVersion =  f'{myRuns.ensemble}_{myChosenIsospin}_reduced_test' 
             locationWorkedCorrelators = f'{myLocation}Matrix_correlators_{myRuns.rs_type}{reBin}_{myVersion}.h5'
             myCorrelator = h5py.File(locationWorkedCorrelators, 'r+')     
             myTMaxList = ed.ensembles[myRuns.ensemble][myIsospin]['multiTMaxFitsOpChoices']
+        else:
+            myTMaxList = ed.ensembles[myRuns.ensemble][myIsospin]['multiTMaxFits']
             
         myFitCorrelator = h5py.File(f'{myFitsLocation}Matrix_correlators_{myRuns.rs_type}{reBin}_fits_{myVersion}.h5', 'a')
-        fts.FitMultiCorrelators(myCorrelator, myFitCorrelator, myRuns.rs_type, myTMaxList, myIrreps, myTypeFit, myTypeCorrelation, one_tmin = myOneTMin, one_t0 = myOneT0, chosen_t0 = myT0, first_irrep = myRuns.the_irreps.first_irrep , last_irrep = myRuns.the_irreps.last_irrep)
+        fts.FitMultiCorrelators(myCorrelator, myFitCorrelator, myRuns.rs_type, myTMaxList, myIrreps, myRuns.fit.type_fit, myRuns.fit.type_correlation, one_tmin = myRuns.fit.one_tmin, one_t0 = myRuns.fit.one_t0, chosen_t0 = myRuns.fit.t0, first_irrep = myRuns.the_irreps.first_irrep , last_irrep = myRuns.the_irreps.last_irrep)
         
         myFitCorrelator.close()
     
@@ -210,13 +200,13 @@ elif myRuns.correlator=='m':
         # myFitCorrelator = h5py.File(
             # myFitsLocation + f'Matrix_correlators_{myRuns.rs_type}{reBin}_fits_{myVersion}.h5', 'r')
         # myCorrDiffLocation = vfa.DIRECTORY_EXISTS(myAnalysisLocation + 'Correlated_Differences/')
-        # cds.CORRELATED_DIFFERENCES(myNonInteractingLevels, myTMinPlot, myTMinMPlot, myNonInteractingFileDict, myFitCorrelator, myCorrDiffLocation, myTMinFit, myLatSize,myRuns.the_irreps.nr_irreps, myNrOps, myT0, myTD, myRuns.rs_type, myCorrDiffPlot, myThresholdMasses, myRuns.ensemble, myIsoLabel, myTwoBody, myThreeBody, fmToMev, myRuns.rb)
+        # cds.CORRELATED_DIFFERENCES(myNonInteractingLevels, myTMinPlot, myTMinMPlot, myNonInteractingFileDict, myFitCorrelator, myCorrDiffLocation, myTMinFit, myLatSize,myRuns.the_irreps.nr_irreps, myNrOps, myRuns.fit.t0, myTD, myRuns.rs_type, myCorrDiffPlot, myThresholdMasses, myRuns.ensemble, myIsoLabel, myTwoBody, myThreeBody, fmToMev, myRuns.rb)
     
     myArchivo.close()
     myCorrelator.close()
 
 
-### Ratio Multi-Hadrons (THIS PART IS STILL UNDER CONSTRUCTION)
+### Ratio Multi-Hadrons
 elif myRuns.correlator=='mr':     
     myIsospin = myRuns.isospin
     myNonInteractingLevels = ed.ensembles[myRuns.ensemble][myIsospin]['nonInteractingLevels']
@@ -224,10 +214,10 @@ elif myRuns.correlator=='mr':
     myTypeCorrelation = myRuns.fit.type_correlation
     
     ### Multi-hadron corrs
-    if myRuns.gevp_flag:
-        myVersion =  f'{myRuns.ensemble}_{myChosenIsospin}_test' 
-    elif myRuns.ops_flag:
+    if myRuns.ops_flag:
         myVersion =  f'{myRuns.ensemble}_{myChosenIsospin}_reduced_test' 
+    else:
+        myVersion =  f'{myRuns.ensemble}_{myChosenIsospin}_test' 
         
     ### Ratio of Correlators
     if myRuns.corrs:
@@ -253,25 +243,32 @@ elif myRuns.correlator=='mr':
     else:
         locationWorkedCorrelators = f'{myLocation}Ratio_matrix_correlators_{myRuns.rs_type}{reBin}_{myVersion}.h5'
         
-    myRatioCorrelator = h5py.File(locationWorkedCorrelators, 'r+')
+    try:
+        myRatioCorrelator = h5py.File(locationWorkedCorrelators, 'r+')
+    except FileNotFoundError:
+        sys.exit(f"File not found. Check directory:\n{locationWorkedCorrelators}")
     
-    ###(NOT WORKED OUT YET UNTIL HERE, ALSO NOT TESTED)
     ### Effective Masses analysis
     if myRuns.effmass: 
         efs.RatioMultiCorrelatorEffectiveMass(myRatioCorrelator, myRuns.rs_type)
     
     ### Fits analysis
-    if myRuns.fits:        
-        myFitsLocation = vf.DIRECTORY_EXISTS(myLocation + 'Fits_Ratios/')
-        myFitRatioCorrelator = h5py.File(myFitsLocation + 'Ratio_matrix_correlators' + myChosenIsospin + myRuns.rs_type + reBin + '_fits_v%s.h5'%myVersion, 'a')
+    if myRuns.fits:          
+        myFitsLocation = vfl.DIRECTORY_EXISTS(f'{myLocation}Fits_Ratios/')
+        myTMaxList = ed.ensembles[myRuns.ensemble][myIsospin]['multiTMaxFitsRatios']
         
-        fs.FitRatioMultiCorrelators(myRatioCorrelator, myFitRatioCorrelator, myRuns.rs_type, listTMaxMultiHads, myIrreps, type_fit = myTypeFit, type_correlation = myTypeCorrelation, one_tmin = myOneTMin, one_t0 = myOneT0, chosen_t0 = myT0)
+        ### Multi-hadron corrs
+        myArchivo = h5py.File(ed.ensembles[myRuns.ensemble][myIsospin]['fm'], 'r')
+        myMultiIrreps = list(myArchivo.keys())
+        myArchivo.close()
+        
+        myFitRatioCorrelator = h5py.File(f'{myFitsLocation}Ratio_matrix_correlators_{myChosenIsospin}_{myRuns.rs_type}{reBin}_fits_{myVersion}.h5', 'a')
+        
+        fts.FitRatioMultiCorrelators(myRatioCorrelator, myFitRatioCorrelator, myRuns.rs_type, myTMaxList, myMultiIrreps, myRuns.fit.type_fit, myRuns.fit.type_correlation, one_tmin = myRuns.fit.one_tmin, one_t0 = myRuns.fit.one_t0, chosen_t0 = myRuns.fit.t0)
         
         myFitRatioCorrelator.close()
     
-    myRatioCorrelator.close()
-    
-    
+    myRatioCorrelator.close()    
 else: 
     print('Not proper choice.')
     sys.exit()
