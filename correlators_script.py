@@ -25,7 +25,7 @@ def SingleCorrelatorAnalysis(the_archivo, the_location, the_version, the_type_rs
 
     ### If not all configs, this can be changed.
     if kwargs.get('number_cfgs')==None:
-        the_number_cnfgs = np.asarray(the_archivo[the_irreps[0]+'/data']).shape[0]
+        the_number_cnfgs = np.asarray(the_archivo[f'{the_irreps[0]}/data']).shape[0]
     else:
         the_number_cnfgs = int(kwargs.get('number_cfgs'))
     
@@ -299,7 +299,7 @@ def MultiCorrelatorAnalysis(the_archivo, the_location, the_version, the_type_rs,
 
         ### Information about the ongoing analysis
         print('----------------------------------------------\n               DATA SHAPE \n----------------------------------------------')
-        print(f'Nr. of gauge configurations: {the_datos.shape[-1]}\n    Size of the Correlation matrix: {the_size_matrix}x{the_size_matrix}\n   Time slices: {the_nt[0]} to {the_nt[-1]}\nResampling data ({the_resampling_scheme}): {the_rs.shape[-1]}\n....................................')
+        print(f'Nr. of gauge configurations: {the_datos.shape[-1]}\nSize of the Correlation matrix: {the_size_matrix}x{the_size_matrix}\nTime slices: {the_nt[0]} to {the_nt[-1]}\nResampling data ({the_resampling_scheme}): {the_rs.shape[-1]}\n....................................')
         
         print('      OPERATORS LIST ')
         for i in range(the_size_matrix):
