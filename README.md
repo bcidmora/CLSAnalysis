@@ -42,3 +42,30 @@ To run the script, the directories must be modified, after that one can do the f
    * Rebin: Nbin size = 10
    * Does the Resampling (--corrs), GEVP of the full set (--eigenvals) with t0min and t0max, it computes the effective masses of the diagonal correlators and of the eigenvalues, does the fitting using 1-exp fit forms, and it starts on the first irrep 1 and it finishes on the second.
     
+
+
+Here a description of the ensembles file:
+
+'aLat' : lattice spacing
+'betaLat' : coupling value
+'LatSize' : lattice extent
+'ncfgs' : Number of TOTAL configs of that ensemble
+'allConfigs': If not all configs of ensemble, then False
+'nfgsList': list of configs to process (notice they start form 0, so they are shifted by 1 unit)
+'weight_raw' : reweighting factors file(s) as a list
+'fs' : string with the location of the single hadrons hdf5 file
+'singleTMaxFits' : Choices of tmax for the fits (list)
+'singleTMinResults' :  Choices of Tmin for the fit-plots (list)
+'s' : { 'iso_name' : singlet, doublet, etc.
+        'iso_tag' : isosinglet, ...
+        'iso_label' : value of I
+        'fm' : string with the directory of the isosinglet hdf5 file
+        'multiTMaxFits' : [[]], List of Tmaxs for the fits for the full operator basis
+        'multiTMinResults' : [[]], List of Tmins for the fit-plots for the full operator basis
+        'nonInteractingLevels' : [[]], Non-interacting levels per irrep, look at the other ensembles with examples
+        'multiTMaxFitsRatios' : [[]], List of TMax for the fits to the ratio of correlators
+        'multiTMinResultsRatios' : [[]], List of tmins for the fit-plots of the ratio of correlators 
+        'operatorsChoice': [[]], List of operators to keep for each irrep. If empty, then all are kept.
+        'multiTMaxFitsOpChoices' : [[]], List of Tmax for the fits of the selected operators (eigenvals)
+        'multiTMinResultsOpChoices' : [[]], List of tmins for the fit-plots of the eigenvalues derived form a selected fit
+        }
