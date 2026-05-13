@@ -32,12 +32,13 @@ The set of scripts are separated by the main actions one can do: resampling, eff
 
 To run the script, the directories must be modified, after that one can do the following:
  
- python3 main_analysis_script.py -e x451 -c m -i s -rs bt -kbt 500 --corrs --effmass --eigenvals --t0min 3 --t0max 4 --fits --fit-type 1 -fi 1 -li 2
+ python3 main_analysis_script.py -e x451 -c m -i s -rs bt -kbt 500 --rebin -rb 10 --corrs --effmass --eigenvals --t0min 3 --t0max 4 --fits --fit-type 1 -fi 1 -li 2
 
  Which means the following:
    * Ensemble: X451
    * Correlator: Multi-hadrons
    * Isospin: Isosinglet
    * Resampling scheme: Bootstrap with 500 samples
+   * Rebin: Nbin size = 10
    * Does the Resampling (--corrs), GEVP of the full set (--eigenvals) with t0min and t0max, it computes the effective masses of the diagonal correlators and of the eigenvalues, does the fitting using 1-exp fit forms, and it starts on the first irrep 1 and it finishes on the second.
     
