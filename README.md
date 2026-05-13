@@ -57,11 +57,11 @@ Here a description of the ensembles file:
 - 'singleTMaxFits' : Choices of tmax for the fits (list)
 - 'singleTMinResults' :  Choices of Tmin for the fit-plots (list)
 - 's' : { 'iso_name' : singlet, doublet, etc.
-        'iso_tag' : isosinglet, ...
-        'iso_label' : value of I
-        'fm' : string with the directory of the isosinglet hdf5 file
-        'multiTMaxFits' : [[]], List of Tmaxs for the fits for the full operator basis
-        'multiTMinResults' : [[]], List of Tmins for the fit-plots for the full operator basis
+      *'iso_tag' : isosinglet, ...
+      * 'iso_label' : value of I
+      * 'fm' : string with the directory of the isosinglet hdf5 file
+      * 'multiTMaxFits' : [[]], List of Tmaxs for the fits for the full operator basis
+      * 'multiTMinResults' : [[]], List of Tmins for the fit-plots for the full operator basis
         'nonInteractingLevels' : [[]], Non-interacting levels per irrep, look at the other ensembles with examples
         'multiTMaxFitsRatios' : [[]], List of TMax for the fits to the ratio of correlators
         'multiTMinResultsRatios' : [[]], List of tmins for the fit-plots of the ratio of correlators 
