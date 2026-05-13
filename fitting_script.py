@@ -45,16 +45,12 @@ def FitSingleCorrelators(the_data, the_fit_data, the_type_rs, the_list_tmaxs, th
     print(f"                     FITTING: {the_string_fit}\n")
     
     
-    np_nan = np.isnan
-    np_double = np.double
-    np_empty = np.empty
-    np_mean = np.mean
+    np_nan, np_double, np_empty, np_mean = np.isnan, np.double, np.empty, np.mean
 
     BEST_GUESS = vfa.BEST_GUESS
     SHRINK_MATRIX = vfa.SHRINK_MATRIX
     My_Fits = vfa.My_Fits
     STD_DEV = vfa.STD_DEV
-
     MinuitCls = Minuit
     
     irrep_index_map = {r: i for i, r in enumerate(the_irreps)}
@@ -86,20 +82,20 @@ def FitSingleCorrelators(the_data, the_fit_data, the_type_rs, the_list_tmaxs, th
         
         the_tmin_data = the_one_exp_fit.require_group('Tmin')
         
-        the_corr = the_data[the_irrep]['Correlators']
+        the_corr = the_data[f'{the_irrep}/Correlators']
         the_corr_fit = np.asarray(the_corr['Real/Mean'], dtype=np.float64)
         the_corr_fit_rs = vfa.NT_TO_NCFGS(np.asarray(the_corr['Real/Resampled'], dtype=np.float64))
         
         the_cov_matrix = np.asarray(the_corr['Real/Covariance_matrix'], dtype=np.float64)
-        the_eff_energy_hint = np.asarray(the_data[the_irrep]['Effective_masses/Mean'])
-        the_nt = np.asarray(the_data[the_irrep]['Time_slices'])
+        the_eff_energy_hint = np.asarray(the_data[f'{the_irrep}/Effective_masses/Mean'])
+        the_nt = np.asarray(the_data[f'{the_irrep}/Time_slices'])
         
         if the_only_one_tmin and kwargs.get('the_tmin') is not None:
             the_ul = int(the_list_tmaxs[j]) - the_nt[0]
             the_ll = [the_tmin - the_nt[0]]
         else:
             the_ul = int(the_list_tmaxs[j]) - the_nt[0]
-            the_ll = np.arange(0, int(the_ul * 0.85))
+            the_ll = np.arange(2, int(the_ul * 0.85))
         
         if type_correlated_fit == 'Correlated':
             the_fit_data_group = the_tmin_data.require_group('Correlated')
@@ -437,13 +433,7 @@ def FitRatioMultiCorrelators(the_data, the_fit_data, the_type_rs, the_list_tmaxs
                             the_dof[0] = np.float64(0.1)
                             the_dof[1] = np.float64(the_eff_energy_hint[ls,nn,yy])
                         
-                        ### Reduces the covariance matrix to the size of the time range chosen
-                        # the_small_cov = vfa.SHRINK_MATRIX(the_cov_matrix_fit, yy, the_ul[ls])
-                        # the_sigma_matrix = np.array(the_small_cov, dtype=np.float64)
-                        
-                        ### This takes the inverse of the covariance matrix
-                        # the_inverse_cov_m = np.linalg.inv(the_sigma_matrix)
-                        
+                        ### Reduces the covariance matrix to the size of the time range chosen and takes the inverse of it                        
                         the_inverse_cov_m = np.linalg.inv(vfa.SHRINK_MATRIX(the_cov_matrix_fit, yy, the_ul[ls]))
                         
                         ### This chooses the fit function to use 
@@ -463,12 +453,10 @@ def FitRatioMultiCorrelators(the_data, the_fit_data, the_type_rs, the_list_tmaxs
                         the_dof_rs = the_dof
                         the_dof_rs[0], the_dof_rs[1] = np.float64(the_fit.values['a0']), e0
                         
-                        # the_energies_list.append(e0); the_chi_vals_list.append(np.float64(the_fit.fval)); 
                         another_useful_list.append(e0)
                         the_results['the_energies'].append(e0)
                         the_results['the_chi_vals'].append(np.float64(the_fit.fval))
                         
-                        # zz=0
                         chi_vals_rs_list = []
                         ### Loop over the resamples
                         for zz in range(the_corr_fit_rs.shape[2]):
@@ -479,13 +467,14 @@ def FitRatioMultiCorrelators(the_data, the_fit_data, the_type_rs, the_list_tmaxs
                             the_fit_rs.scan()
                             the_fit_rs.migrad(iterate=10, ncall=5000)
                             
-                            e0_rs = np.float64(the_fit_rs.values['e0']); chi_vals_rs_list.append(the_fit_rs.fval); another_useful_list.append(e0_rs)
+                            e0_rs = np.float64(the_fit_rs.values['e0']); 
+                            chi_vals_rs_list.append(the_fit_rs.fval); 
+                            another_useful_list.append(e0_rs)
                         
                         ### This is the sigma for the fittings
                         sigma_fit_rs = vfa.STD_DEV(another_useful_list[1:], np.mean(another_useful_list[1:]), the_type_rs)
                         sigma_chi_rs = vfa.STD_DEV(chi_vals_rs_list, np.mean(chi_vals_rs_list), the_type_rs)
                         
-                        # the_sigmas_list.append(sigma_fit_rs); the_sigmas_chi_list.append(sigma_chi_rs);
                         the_results['the_sigmas'].append(sigma_fit_rs)
                         the_results['the_sigmas_chi'].append(sigma_chi_rs)
                         another_list.append(np.array(another_useful_list))
