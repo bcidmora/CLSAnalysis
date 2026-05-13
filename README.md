@@ -27,8 +27,9 @@ The set of scripts are separated by the main actions one can do: resampling, eff
   - Dispersion relation: --disp-rel
   - Correlated differences: --corr-dif (still under construction)
   - Binning analysis: --binning (Zoe's implementation)
-
   - Irreps: --start-irrep or -fi; --last-irrep or -li; --nr-irreps or -ir.
+
+OBS: For the Operators analysis, a new file is created with the reduced set of operators. this new file is based on the original full set of resampled correlators, but the GEVP is performed only considering the new set of ops. The desired operators to keep must be specified per each irrep. 
 
 To run the script, the directories must be modified, after that one can do the following:
  
