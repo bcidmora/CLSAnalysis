@@ -2,7 +2,10 @@ import numpy as np
 import h5py
 import os
 
-location = os.path.expanduser("~")+"/Documents/Chris Files" # Path to your main folder
+### This is where your main directory is
+location = os.path.expanduser("~")+"/${YOUR_PATH}" # Path to your main folder
+
+### This is where your output files are going to be stored
 outputLocation = f"{location}/CorrelatorData/"
 
 fmToMev = np.float64(197.327)
