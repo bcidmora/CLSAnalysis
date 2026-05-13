@@ -388,7 +388,7 @@ def MultiCorrelatorAnalysisRatios(the_multi_hadrons_archivo, the_single_hadrons_
         
         ### Printing some information in screen
         print('\n--------------------------------------------------------------------------------------')
-        print(f'-->   IRREP({the_m_irreps.index(the_irrep)+1}/{len(the_m_irreps)}): {the_irrep}')
+        print(f'-->  IRREP({the_m_irreps.index(the_irrep)+1}/{len(the_m_irreps)}): {the_irrep}')
         print(f'     Size Matrix: {the_size_matrix}x{the_size_matrix}')
         print(f'     OPERATORS LIST \n----------------------------------------------')
         for ii in range(the_size_matrix):
@@ -523,11 +523,9 @@ if __name__== "__main__":
     vfl.INFO_PRINTING(myRuns.correlator, myRuns.ensemble)
     
     if myRuns.correlator =='s':        
-        ### Name of the output file
         myVersion =  f'{myRuns.ensemble}_singles_test' 
-    
         myArchivo = h5py.File(ed.ensembles[myRuns.ensemble]['fs'], 'r')
-        myIrreps = list(myArchivo.keys())        
+        myIrreps = list(myArchivo.keys())  
         
         savedLocation = SingleCorrelatorAnalysis(myArchivo, myLocation, myVersion, myRuns.rs_type, myIrreps, myWeight, rebin_on = myRuns.rebin, rb = myRuns.rb, kbt = myRuns.kbt, number_cfgs = myCnfgs, nr_irreps = myRuns.the_irreps.nr_irreps, own_kbt_list = myKbtSamples, first_irrep = myRuns.the_irreps.first_irrep, last_irrep = myRuns.the_irreps.last_irrep)
         
