@@ -382,7 +382,7 @@ def DOING_THE_GEVP_SINGLE_PIVOT(the_t0_min_max, the_nt, the_mean_corr, the_rs_re
 # group_i: This is the "folder" in which the information will be saved in the hdf5 file.
 # the_sorting: This is the method chosen for sorting
 # the_sorting_process: This is the function that will be called with the sorting.
-def DOING_THE_GEVP(the_t0_min_max, the_nt, the_mean_corr, the_rs_real, the_type_rs, the_sorting, def DOING_THE_GEVP(the_t0_min_max, the_nt, the_mean_corr, the_rs_real, the_type_rs, the_sorting, the_sorting_process, the_rs_sorting_process, group_i):
+def DOING_THE_GEVP(the_t0_min_max, the_nt, the_mean_corr, the_rs_real, the_type_rs, the_sorting, the_sorting_process, the_rs_sorting_process, group_i):
     
     print("ROLLING PIVOT")
     
@@ -474,7 +474,6 @@ def DOING_THE_GEVP(the_t0_min_max, the_nt, the_mean_corr, the_rs_real, the_type_
         group_eigns.create_dataset('Resampled', data = the_evals_fits_rs)
         group_eigns.create_dataset('Covariance_matrix', data = np.asarray(the_sigma_2))
         print(f'T0 = {the_t0_init + the_nt[0]}...DONE')
-
 
 
 ### Comments:
