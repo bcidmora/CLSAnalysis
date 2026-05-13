@@ -46,17 +46,17 @@ To run the script, the directories must be modified, after that one can do the f
 
 Here a description of the ensembles file:
 
-'aLat' : lattice spacing
-'betaLat' : coupling value
-'LatSize' : lattice extent
-'ncfgs' : Number of TOTAL configs of that ensemble
-'allConfigs': If not all configs of ensemble, then False
-'nfgsList': list of configs to process (notice they start form 0, so they are shifted by 1 unit)
-'weight_raw' : reweighting factors file(s) as a list
-'fs' : string with the location of the single hadrons hdf5 file
-'singleTMaxFits' : Choices of tmax for the fits (list)
-'singleTMinResults' :  Choices of Tmin for the fit-plots (list)
-'s' : { 'iso_name' : singlet, doublet, etc.
+- 'aLat' : lattice spacing
+- 'betaLat' : coupling value
+- 'LatSize' : lattice extent
+- 'ncfgs' : Number of TOTAL configs of that ensemble
+- 'allConfigs': If not all configs of ensemble, then False
+- 'nfgsList': list of configs to process (notice they start form 0, so they are shifted by 1 unit)
+- 'weight_raw' : reweighting factors file(s) as a list
+- 'fs' : string with the location of the single hadrons hdf5 file
+- 'singleTMaxFits' : Choices of tmax for the fits (list)
+- 'singleTMinResults' :  Choices of Tmin for the fit-plots (list)
+- 's' : { 'iso_name' : singlet, doublet, etc.
         'iso_tag' : isosinglet, ...
         'iso_label' : value of I
         'fm' : string with the directory of the isosinglet hdf5 file
