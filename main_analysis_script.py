@@ -83,14 +83,11 @@ if myRuns.correlator =='s':
         
     ### Fits analysis
     if myRuns.fits: 
-        myOneTMin = myRuns.fit.one_tmin
-        myTypeFit = myRuns.fit.type_fit
-        myTypeCorrelation = myRuns.fit.type_correlation
         myTMaxList = ed.ensembles[myRuns.ensemble]['singleTMaxFits']
         myFitsLocation = vfl.DIRECTORY_EXISTS(f'{myLocation}Fits_SingleHadrons/')
         myFitCorrelator =  h5py.File(f'{myFitsLocation}Single_correlators_{myRuns.rs_type}{reBin}_fits_{myVersion}.h5', 'a')
         
-        fts.FitSingleCorrelators(myCorrelator, myFitCorrelator, myRuns.rs_type, myTMaxList, myIrreps, myTypeFit, myTypeCorrelation, one_tmin = myOneTMin, first_irrep = myRuns.the_irreps.first_irrep, last_irrep = myRuns.the_irreps.last_irrep)
+        fts.FitSingleCorrelators(myCorrelator, myFitCorrelator, myRuns.rs_type, myTMaxList, myIrreps, myRuns.fit.type_fit, myRuns.fit.type_correlation, one_tmin = myRuns.fit.one_tmin, first_irrep = myRuns.the_irreps.first_irrep, last_irrep = myRuns.the_irreps.last_irrep)
         
         myFitCorrelator.close()
     
@@ -115,7 +112,7 @@ if myRuns.correlator =='s':
 #         myBinSizeIrrepName = myIrreps[myBinSizeIrrep[0]]
 #         myBinLocation = vfl.DIRECTORY_EXISTS(f'{myLocation}Bin_Size_Analysis_{myBinSizeIrrepName}_{myRuns.rs_type}/')
 #         
-#         bs.BinSizeAnalysis(myArchivo, myBinLocation, myRuns.rs_type, myBinSizeIrrep, myIrreps, myTMinFit, myMaxBinSize, myBinSizeFitRange, myChosenBinSize, myVersion, myWeight, one_tmin=myOneTMin, type_fit=myTypeFit, type_correlation=myTypeCorrelation, kbt=myRuns.kbt, number_cfgs=myCnfgs, own_kbt_list=myKbtSamples, isospin_label=ed.ensembles[myRuns.ensemble]['iso_label'], ensemble=myRuns.ensemble, plots_only=runPlotBinOnly)
+#         bs.BinSizeAnalysis(myArchivo, myBinLocation, myRuns.rs_type, myBinSizeIrrep, myIrreps, myTMinFit, myMaxBinSize, myBinSizeFitRange, myChosenBinSize, myVersion, myWeight, one_tmin=myRuns.fit.one_tmin, type_fit=myRuns.fit.type_fit, type_correlation=myRuns.fit.type_correlation, kbt=myRuns.kbt, number_cfgs=myCnfgs, own_kbt_list=myKbtSamples, isospin_label=ed.ensembles[myRuns.ensemble]['iso_label'], ensemble=myRuns.ensemble, plots_only=runPlotBinOnly)
 #     
     myArchivo.close()
     myCorrelator.close()
@@ -279,9 +276,3 @@ else:
 print('-'*(len(locationWorkedCorrelators)+1))
 print('Correlator analysis saved as: \n' + locationWorkedCorrelators )
 print('_'*(len(locationWorkedCorrelators)+1))
-
-
-### -------- CLOSES ALL OTHER FILES --------
-
-
-
