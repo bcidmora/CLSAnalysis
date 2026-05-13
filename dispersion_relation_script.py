@@ -18,9 +18,21 @@ import set_of_analysis_functions as vfa
 import set_of_plot_functions as vfp
 import set_of_layout_functions as vfl
 
+# import matplotlib
+# matplotlib.rcParams.update({
+#     "mathtext.fontset": "cm",
+#     "font.family": "serif",
+#     "pdf.fonttype": 42,
+#     "ps.fonttype": 42
+# })
 
-plt.rcParams["font.family"] = "sans"
-plt.rcParams["mathtext.fontset"] = "dejavusans"
+import matplotlib
+matplotlib.rcParams['mathtext.fontset'] = 'stix'
+matplotlib.rcParams['font.family'] = 'STIXGeneral'
+
+the_colors  = [ "#5d83d5", "#b90f22", "#ffa500", "#008000", "#c44601", "#f57600", "#5ba300","#e6308a", "#8a2be2", "#00ced1", "#ffd700", "#ff69b4", "#7cfc00", "#dc143c", "#4682b4", "#ff8c00", "#00fa9a", "#9370db", "#1e90ff", "#ff1493", "#9acd32"]
+### All different types of amrkers to plot more than one dataset at the same time
+the_markers_list = ['o','^','s','p','v','*','x','d','>','D', '<','8','P','h','1','o','v','s','p','^','*','x']
 
 
 def DISPERSION_RELATION(fit_file, the_rs, the_tmin_choice, the_lat_size, the_disp_location, the_plot_type, the_ensemble):
@@ -118,8 +130,8 @@ def DISPERSION_RELATION(fit_file, the_rs, the_tmin_choice, the_lat_size, the_dis
             axes_bottom = [fig.add_subplot(gs[1, i]) for i in range(cols)]  # Untere Reihe: 4 einzelne Plots
             
             for i, ax in enumerate(axes_bottom):
-                ax.errorbar(x_pos[i] , energy_dispersion[i], yerr= sigmas_dispersion[i], fmt='^', markersize=8, capsize=4, color=vfp.colors[1], ecolor=vfp.greys[1])
-                ax.errorbar(x_pos[i], energy_calculated[i], yerr=sigmas_calculated[i], fmt='o', markersize=8, capsize=4, color=vfp.colors[0], ecolor=vfp.greys[0])
+                ax.errorbar(x_pos[i] , energy_dispersion[i], yerr= sigmas_dispersion[i], fmt='^', markersize=8, capsize=4, color=the_colors[1], ecolor=vfp.greys[1])
+                ax.errorbar(x_pos[i], energy_calculated[i], yerr=sigmas_calculated[i], fmt='o', markersize=8, capsize=4, color=the_colors[0], ecolor=vfp.greys[0])
 
                 ax.set_ylim(center[i] - range_size / 2 - 0.005, center[i] + range_size / 2 + 0.005)
 
@@ -127,22 +139,22 @@ def DISPERSION_RELATION(fit_file, the_rs, the_tmin_choice, the_lat_size, the_dis
                 ax.set_xticks([x_pos[i]])
                 ax.set_xticklabels([the_momenta[i]])
 
-            ax_top.errorbar(x_pos, energy_dispersion, yerr=sigmas_dispersion, fmt='^', markersize=8, capsize=4, color=vfp.colors[1], ecolor=vfp.greys[1], label=r'$D(am, p^{2})$')
-            ax_top.errorbar(x_pos, energy_calculated, yerr=sigmas_calculated, fmt='o', markersize=8, capsize=4, color=vfp.colors[0], ecolor=vfp.greys[0], label=r'Fit results')
+            ax_top.errorbar(x_pos, energy_dispersion, yerr=sigmas_dispersion, fmt='^', markersize=8, capsize=4, color=the_colors[1], ecolor=vfp.greys[1], label=r'$D(am, p^{2})$')
+            ax_top.errorbar(x_pos, energy_calculated, yerr=sigmas_calculated, fmt='o', markersize=8, capsize=4, color=the_colors[0], ecolor=vfp.greys[0], label=r'Fit results')
 
-            ax_top.set_xlabel(r'$p^{2}$', fontsize=20)
+            ax_top.set_xlabel(r'Momentum $(\mathrm{d}^{2})$', fontsize=20)
 
-            ax_top.set_ylabel(r'$aE/am$', fontsize=20)
-            axes_bottom[0].set_ylabel(r'$aE/am$', fontsize=20)
+            ax_top.set_ylabel(r'$aE_{lab}/am$', fontsize=20)
+            axes_bottom[0].set_ylabel(r'$aE_{lab}/am$', fontsize=20)
 
-            ax_top.set_title(r'Dispersion Relation', fontsize=20)
+            ax_top.set_title(f'Dispersion Relation', fontsize=20)
             ax_top.legend(fontsize=14)
             ax_top.tick_params(axis='both', which='major', length=10, direction='inout', labelsize=16, top=True, right=True)
             ax_top.set_xticks(x_pos, [x_ticks_dict[i] for i in x_pos])
-            fig.suptitle(rf'$I =$ {vfp.OPERATORS_SH_ISOSPIN(this_hadron)}, ' + vfp.GET_RESAMPLING_BINNING(fit_file)[0] + ', ' + vfp.GET_RESAMPLING_BINNING(fit_file)[1] + ', ' + the_ensemble, fontsize=20)
+            fig.suptitle(rf'$I =$ {vfp.OPERATORS_SH_ISOSPIN(this_hadron)}, ' + vfp.GET_RESAMPLING_BINNING(fit_file)[0] + ', ' + vfp.GET_RESAMPLING_BINNING(fit_file)[1] + ', ' + the_ensemble, fontsize=16)
 
             fig.tight_layout()
-            fig.savefig(f'{the_disp_location}{this_hadron}_v{the_version}_absolute_dispersion_relation.pdf', format='pdf')
+            fig.savefig(f'{the_disp_location}{this_hadron}_{the_version}_absolute_dispersion_relation.pdf', format='pdf')
 
 
         if the_plot_type == 'rel' or the_plot_type == 'both':
@@ -160,12 +172,12 @@ def DISPERSION_RELATION(fit_file, the_rs, the_tmin_choice, the_lat_size, the_dis
             fig, ax = plt.subplots(figsize=(8, 4))
             ax.errorbar(x_pos, energies_relative, yerr=sigmas_relative, fmt='o', markersize=6, capsize=3, color=vfp.colors[0], ecolor=vfp.greys[0])
             ax.tick_params(axis='both', which='major', length=10, direction='inout', labelsize=12, top=True, right=True)
-            ax.set_xlabel(r'$p^{2}$', fontsize=16)
+            ax.set_xlabel(r'Momentum $d^{2}$', fontsize=16)
             ax.axhline(1, 0, 10, linestyle=':', color=vfp.greys[2])
-            ax.set_ylabel(r'$aE/ D(am, p^{2})$', fontsize=16)
+            ax.set_ylabel(r'$aE/ D(am, d^{2})$', fontsize=16)
             ax.xaxis.set_major_locator(MultipleLocator(1))
             ax.set_xticks(x_pos, [x_ticks_dict[i] for i in x_pos])
-            ax.set_title('Dispersion Relation', fontsize=16)
+            ax.set_title(f'Dispersion Relation', fontsize=20)
             fig.suptitle(rf'$I =$ {vfp.OPERATORS_SH_ISOSPIN(this_hadron)}, ' + vfp.GET_RESAMPLING_BINNING(fit_file)[0] + ', ' + vfp.GET_RESAMPLING_BINNING(fit_file)[1] + ', ' + the_ensemble, fontsize=16)
             fig.tight_layout()
             fig.savefig(f'{the_disp_location}{this_hadron}_v{the_version}_relative_dispersion_relation.pdf', format='pdf')
