@@ -191,12 +191,12 @@ def RatioMultiCorrelatorEffectiveMass(the_matrix_correlator_data, the_type_rs, *
                 the_eff_mass_mean.append(np.asarray(the_eff_mass_mean_i))
                 the_cov_eff_mass.append(np.asarray(the_cov_eff_mass_i)) 
             
-            group_em_t0.create_dataset('Mean', data=np.asarray(the_eff_mass_mean))
-            group_em_t0.create_dataset('Sigmas',data=np.asarray(the_cov_eff_mass))
+            group_em_t0.create_dataset('Mean', data = np.asarray(the_eff_mass_mean))
+            group_em_t0.create_dataset('Sigmas',data = np.asarray(the_cov_eff_mass))
         
-        print('Irrep nr.: '+ str(j+1) + ' out of ' +str(len(the_list_name_irreps)))
+        print(f'Irrep nr.: {j+1} out of {len(the_list_name_irreps)}')
     end_time = time.time()
-    print('TIME TAKEN: ' + str((end_time-begin_time)/60) +' mins')
+    print(f'TIME TAKEN: {(end_time-begin_time)/60} mins')
 
 
 ### ------------------------------- END FUNCTIONS ----------------------------------------------------
