@@ -1,3 +1,18 @@
+Required libraries:
+- numpy
+- h5py
+- PyPDF2
+- matplotlib
+- scipy
+- iminuit
+
+For the matplotlib fonts, do the following:
+sudo apt install fonts-cmu
+
+Then do this in order to make matplotlib know of the new fonts:
+rm -rf ~/.cache/matplotlib
+
+
 The set of scripts are separated by the main actions one can do: resampling, effective masses, GEVP, fits. Some notes before starting anything:
 
 1. The ensembles.py file must be edited using the name of the correct files for the corresponding ensemble. For each ensemble, there are subdivisions that include different quantum numbers and separates the single hadron from the multi hadron correlators. This file contains the following:
