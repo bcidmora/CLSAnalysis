@@ -18,21 +18,15 @@ import set_of_analysis_functions as vfa
 import set_of_plot_functions as vfp
 import set_of_layout_functions as vfl
 
-# import matplotlib
-# matplotlib.rcParams.update({
-#     "mathtext.fontset": "cm",
-#     "font.family": "serif",
-#     "pdf.fonttype": 42,
-#     "ps.fonttype": 42
-# })
-
 import matplotlib
-matplotlib.rcParams['mathtext.fontset'] = 'stix'
-matplotlib.rcParams['font.family'] = 'STIXGeneral'
-
-the_colors  = [ "#5d83d5", "#b90f22", "#ffa500", "#008000", "#c44601", "#f57600", "#5ba300","#e6308a", "#8a2be2", "#00ced1", "#ffd700", "#ff69b4", "#7cfc00", "#dc143c", "#4682b4", "#ff8c00", "#00fa9a", "#9370db", "#1e90ff", "#ff1493", "#9acd32"]
-### All different types of amrkers to plot more than one dataset at the same time
-the_markers_list = ['o','^','s','p','v','*','x','d','>','D', '<','8','P','h','1','o','v','s','p','^','*','x']
+matplotlib.rcParams.update({
+    "mathtext.fontset": "cm",          
+    "font.family": "serif",
+    "font.serif": ["CMU Serif"],       
+    "axes.unicode_minus": False,       
+    "pdf.fonttype": 42,
+    "ps.fonttype": 42,
+})
 
 
 def DISPERSION_RELATION(fit_file, the_rs, the_tmin_choice, the_lat_size, the_disp_location, the_plot_type, the_ensemble):
@@ -125,13 +119,13 @@ def DISPERSION_RELATION(fit_file, the_rs, the_tmin_choice, the_lat_size, the_dis
             else: fig = plt.figure(figsize=(21, 7))
             cols = len(the_momenta)
             
-            gs = gridspec.GridSpec(2, cols, height_ratios=[1, 1])  # 2 Reihen, 4 Spalten
+            gs = gridspec.GridSpec(2, cols, height_ratios=[1, 1])  
             ax_top = fig.add_subplot(gs[0, :])
-            axes_bottom = [fig.add_subplot(gs[1, i]) for i in range(cols)]  # Untere Reihe: 4 einzelne Plots
+            axes_bottom = [fig.add_subplot(gs[1, i]) for i in range(cols)]  
             
             for i, ax in enumerate(axes_bottom):
-                ax.errorbar(x_pos[i] , energy_dispersion[i], yerr= sigmas_dispersion[i], fmt='^', markersize=8, capsize=4, color=the_colors[1], ecolor=vfp.greys[1])
-                ax.errorbar(x_pos[i], energy_calculated[i], yerr=sigmas_calculated[i], fmt='o', markersize=8, capsize=4, color=the_colors[0], ecolor=vfp.greys[0])
+                ax.errorbar(x_pos[i] , energy_dispersion[i], yerr= sigmas_dispersion[i], fmt='^', markersize=8, capsize=4, color=vfp.the_colors[1], ecolor=vfp.greys[1])
+                ax.errorbar(x_pos[i], energy_calculated[i], yerr=sigmas_calculated[i], fmt='o', markersize=8, capsize=4, color=vfp.the_colors[0], ecolor=vfp.greys[0])
 
                 ax.set_ylim(center[i] - range_size / 2 - 0.005, center[i] + range_size / 2 + 0.005)
 
@@ -139,8 +133,8 @@ def DISPERSION_RELATION(fit_file, the_rs, the_tmin_choice, the_lat_size, the_dis
                 ax.set_xticks([x_pos[i]])
                 ax.set_xticklabels([the_momenta[i]])
 
-            ax_top.errorbar(x_pos, energy_dispersion, yerr=sigmas_dispersion, fmt='^', markersize=8, capsize=4, color=the_colors[1], ecolor=vfp.greys[1], label=r'$D(am, p^{2})$')
-            ax_top.errorbar(x_pos, energy_calculated, yerr=sigmas_calculated, fmt='o', markersize=8, capsize=4, color=the_colors[0], ecolor=vfp.greys[0], label=r'Fit results')
+            ax_top.errorbar(x_pos, energy_dispersion, yerr=sigmas_dispersion, fmt='^', markersize=8, capsize=4, color=vfp.the_colors[1], ecolor=vfp.greys[1], label=r'$D(am, d^{2})$')
+            ax_top.errorbar(x_pos, energy_calculated, yerr=sigmas_calculated, fmt='o', markersize=8, capsize=4, color=vfp.the_colors[0], ecolor=vfp.greys[0], label=f'Fit results')
 
             ax_top.set_xlabel(r'Momentum $(\mathrm{d}^{2})$', fontsize=20)
 
