@@ -221,14 +221,14 @@ def IRREP_OP_LIST(the_Nr_Irreps, the_Nr_Ops):
 # a: shape [nt]
 # This is the old version of the Effective Masses. It can still be used, but the other one is more general
 def EFF_MASS_CLASSIC(a):
-    meff = np.array([np.log(np.double(a[i])/np.double(a[i+1])) for i in range(len(a)-1)])
+    meff = np.asarray([np.log(np.double(a[i])/np.double(a[i+1])) for i in range(len(a)-1)])
     return meff 
 
 # This function receives a list "a" of time slices, and it calculates the effective mass, returning a list of effectives masses for each time slice (half integer numbers).
 # a: shape [nt]
 # d: distance of two points, by default this is 1
 def EFF_MASS(a,d):
-    meff = np.array([np.log(np.abs(np.double(a[i])/np.double(a[i+d]))) for i in range(len(a)-d)])
+    meff = np.asarray([np.log(np.abs(np.double(a[i])/np.double(a[i+d]))) for i in range(len(a)-d)])
     return meff
 
 
@@ -236,7 +236,7 @@ def EFF_MASS(a,d):
 # a: is the correction to the correlator with shape [nt]
 # b: is the main baryon correlator with shape [nt]
 def EFF_MASS_CORRECTIONS(a,b):
-    meff = np.array([np.double(a[i])/np.double(b[i])  - np.double(a[i+1])/np.double(b[i+1]) for i in range(len(a)-1)])
+    meff = np.asarray([np.double(a[i])/np.double(b[i])  - np.double(a[i+1])/np.double(b[i+1]) for i in range(len(a)-1)])
     return meff
 
 # This function receives a list "a" of time slices, and it calculates the effective mass, returning a list of effectives masses for each time slice (half integer numbers).
@@ -1196,10 +1196,12 @@ def COV_MATRIX(a,b,c):
 # Comments:
 # This is the function for a single exponential fit. Ae^{-E0*(nt-t0))}
 # x: is the t_slices
-# e0: is a list (amplitud, energy)
-# *a: this is a variable size arguments, in thie case corresponds to t0.
-def SINGLE_EXPONENTIAL(x,e0,*a): 
-    return e0[0] * np.exp((-e0[1]) * (x - a))
+# the_pars: is a list (amplitud, energy)
+# # *a: this is a variable size arguments, in thie case corresponds to t0.
+def SINGLE_EXPONENTIAL(x,the_pars,*a): 
+    a0, e0 = the_pars
+    return a0 * np.exp(-e0 * (x - a))
+
 
 ### Comments:
 # This is the function for an alternative double exponential fit. Ae^{-E0*(nt-t0)}(1+ B e^{-nt (E1-E0)})
@@ -1213,20 +1215,21 @@ def DOUBLE_EXPONENTIAL_ALTERNATIVE(x, e0, *a):
 # Comments:
 # This is the function for a geometric fit form: Ae^{-E0(nt-t0)}/ (1 - B e^{- nt*M})
 # x: is the t_slices
-# e0: is a list (amplitud, energy E0, Amplitude shift of energy)
+# the_pars: is a list (amplitud, energy E0, Amplitude shift of energy)
 # *a: this is a variable size arguments, in thie case corresponds to t0.
-def GEOMETRIC_FORM(x,e0,*a):
-    return e0[0] * np.exp(-(x-a) * e0[1]) / (1. - e0[2] * np.exp(-x * e0[3]))
+def GEOMETRIC_FORM(x,the_pars,*a):
+    a0, e0, b, dm = the_pars
+    return a0 * np.exp(-(x-a) * e0) / (1. - b * np.exp(-x * dm))
 
 
 ### Comments:
 # This is the function for a double exponential fit. Ae^{-E0*(nt-t0)}(1+ Be^{-nt*D^{2}})
 # x: is the t_slices
-# e0: is a list (amplitud, energy E0, Amplitude shift of energy, DeltaE**2)
+# the_pars: is a list (amplitud, energy E0, Amplitude shift of energy, DeltaE**2)
 # *a: this is a variable size arguments, in thie case corresponds to t0.
-def DOUBLE_EXPONENTIAL(x, e0, *a):
-    return e0[0] * np.exp(-(x - a) * e0[1]) * (1. + e0[2] * np.exp(-x * (e0[3] ** 2)))
-
+def DOUBLE_EXPONENTIAL(x, the_pars, *a):
+    a0, e0, b, dm = the_pars
+    return a0 * np.exp(-(x - a) * e0) * (1. + b * np.exp(-x * (dm ** 2)))
 
 
 ### Comments:
@@ -1242,6 +1245,7 @@ def BEST_GUESS(c,t_i,tipo_fit):
         guess.append(np.double(0.1))
         guess.append(np.double(0.5))
     return guess
+
 
 ### Comments: 
 # This function gets the Difference between a Chi^{2} of one time slice compared to the next time slice value of Chi^{2}. This in order to check for stability.
@@ -1266,8 +1270,8 @@ def TOTAL_CHI(a,b,c,nrp):
 class My_Fits:
     def __init__(self, model, x, y, cov, dgof, a):
         self.model = model  # model predicts y for given x
-        self.x = np.array(x, dtype = float)
-        self.y = np.array(y, dtype = float)
+        self.x = np.asarray(x, dtype = float)
+        self.y = np.asarray(y, dtype = float)
         self.cov = np.matrix(cov, dtype = float)
         
         self.arg = a
@@ -1282,7 +1286,6 @@ class My_Fits:
         the_val_chi2 = float(the_chi2 / self.dof)
         
         return the_val_chi2
-        # return np.dot(np.dot(self.y - ym, self.cov), self.y - ym)/np.double((np.double(len(self.x))-self.nrPars))
     
     
     
@@ -1307,7 +1310,6 @@ class My_Fits_Update:
         val = float(chi2 / self.dof)
 
         return val
-    
     
     
 def DOING_THE_FITTING(the_corr, the_nt, the_type_rs, the_irreps, the_irrep, tmin_data, the_type_correlated_fit, the_type_fit, the_only_one_tmin, the_t0, the_list_tmaxs, da_minimization, the_fit_params):
@@ -1352,7 +1354,6 @@ def DOING_THE_FITTING(the_corr, the_nt, the_type_rs, the_irreps, the_irrep, tmin
             the_ul = [x-the_nt[0] for x in the_list_tmaxs[the_irreps.index(the_irrep)]]
             
             ### Lower limit for the fit depends on the upper limit
-            # the_ll = np.arange(nt_mod[0]+1, int(the_ul[ls]*(.8 - (0.025*ls))))
             the_ll = np.arange(nt_mod[0]+1, int(nt_mod[-1]*.75))
             
         ### Choosing the covariance matrix depending on the type of correlated fit
@@ -1399,9 +1400,12 @@ def DOING_THE_FITTING(the_corr, the_nt, the_type_rs, the_irreps, the_irrep, tmin
             ### Energy values
             e0 = np.float128(the_fit.values['e0'])
             
+            ### Amplitude values
+            a0 = np.float128(the_fit.values['a0'])
+            
             ### The fitted energy results from the central values are used as an initial guess for the resamples
             the_dof_rs = the_dof
-            the_dof_rs[0], the_dof_rs[1] = np.float64(the_fit.values['a0']), e0
+            the_dof_rs[0], the_dof_rs[1] = a0, e0
             
             another_useful_list.append(e0)
             
@@ -1440,14 +1444,14 @@ def DOING_THE_FITTING(the_corr, the_nt, the_type_rs, the_irreps, the_irrep, tmin
 
 ### Comments:
 def CONTINUUM_DISP_REL(p, E0, norm):
-    E = np.sqrt(E0 ** 2 + int(p) * norm)
+    E = np.sqrt(E0 ** 2 + int(p) * norm) # p is already squared so no need to square it again
     E_norm = E / E0  # aE
     return E_norm
 
 ### Comments:
 # calculates the fraction of the measured energy E (lat units) and the values of the continuum dispersion relation for the measured E0
 def RELATIVE_DISP_REL(p, E0, E, norm):
-    E_disp = np.sqrt(E0 ** 2 + int(p) * norm)
+    E_disp = np.sqrt(E0 ** 2 + int(p) * norm) # p is already squared so no need to square it again
     return E / E_disp
     
     
@@ -1465,6 +1469,7 @@ def CONTINUUM_DISP_REL_NO_NORM(p, E0, norm):
     return E
 
 ### Comments:
+# WHAT IS THIS?
 def EXTRACT_HADS_MOM(non_int_list):
     return None
 
@@ -1487,11 +1492,11 @@ def NON_INTERACTING_LEVELS(non_int_list, t_mins_range, singles_files, t_mins_shi
                     'Resampled': dataset.get('1exp/Tmin/Correlated/Resampled')[()][t_mins_range[meson][i] - t_mins_shift]}
                 nr_rs = dataset.get('1exp/Tmin/Correlated/Resampled')[()][t_mins_range[meson][i] - t_mins_shift].size
             except KeyError:
-                raise KeyError(f'Irrep {irrep} does not excist in {meson} file.')
+                raise KeyError(f'Irrep {irrep} does not exist in {meson} file.')
             except TypeError:
                 raise TypeError(f'Fit data in irrep {irrep} is missing in {meson} file.')
             except IndexError:
-                raise IndexError(f'Chosen fit range does not excist in {meson} file.')
+                raise IndexError(f'Chosen fit range does not exist in {meson} file.')
         singles_files[meson].close()
 
 

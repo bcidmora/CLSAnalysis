@@ -211,42 +211,5 @@ def RatioMultiCorrelatorEffectiveMass(the_matrix_correlator_data, the_type_rs, *
 ### ------------------------------- START EXECUTING --------------------------------------------------
 
 
-if __name__=="__main__":
-    import ensembles as ed
-    
-    myArgs = vfl.parse_args()
-    myRuns = vfl.WhichRuns(myArgs, ed.ensembles)
-    
-    reBin = f"_bin{myRuns.rb}" if myRuns.rebin else ""
-    
-    myLocation = vfl.DIRECTORY_EXISTS(f'{ed.outputLocation}{myRuns.ensemble}/')
-    
-    vfl.INFO_PRINTING(myWhichCorrelator, myEns)
-    
-    if myRuns.correlator =='s':
-        myVersion =  f'{myRuns.ensemble}_singles_test' 
-        myEffMassFunction = SingleCorrelatorEffectiveMass
-            
-        mySingleCorrelatorData = h5py.File(f'{myLocation}Single_correlators_{myRuns.rs_type}{reBin}_{myVersion}.h5', 'r')
-        myIrreps = list(mySingleCorrelatorData.keys())  
-        
-        myEffMassFunction(mySingleCorrelatorData,  myRuns.rs_type, dist_eff_mass = myRuns.dist_eff_mass) 
-        mySingleCorrelatorData.close()
-    
-    elif myWhichCorrelator=='m':    
-        myVersion =  f'_{myEns}_{myChosenIsospin}_test' 
-        myNameArchivo = f'{myLocation}Matrix_correlators_{myRuns.rs_type}{reBin}_v{myVersion}.h5'
-        
-        myMatrixCorrelatorData = h5py.File(myNameArchivo, 'r+')
-        MultiCorrelatorEffectiveMass(myMatrixCorrelatorData, myRuns.rs_type, dist_eff_mass = myRuns.dist_eff_mass, diag_corrs= myDiagonalCorrs, gevp=myGevpFlag, ops_analysis=myOperatorsFlag)
-        myMatrixCorrelatorData.close()
-    
-    elif myWhichCorrelator=='mr':
-        myNameArchivo = f'{myLocation}Matrix_correlators_ratios_{myRuns.rs_type}{reBin}_v{myVersion}.h5'
-        myRatioMatrixCorrelatorData = h5py.File(myNameArchivo, 'r+')
-        MultiCorrelatorEffectiveMass(myRatioMatrixCorrelatorData, myRuns.rs_type)
-        myRatioMatrixCorrelatorData.close()
-    
-    print('-'*(len(myNameArchivo)+1))
-    print('Saved as: \n' + myNameArchivo)
-    print('_'*(len(myNameArchivo)+1))
+if __name__== "__main__":
+    print("Nothing to do here.")
